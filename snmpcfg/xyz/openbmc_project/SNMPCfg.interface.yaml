@@ -1,0 +1,22 @@
+description: >
+    This service control settings for snmpd.service
+
+methods:
+    - name: GetConfig
+      description: >
+          Get actual version of snmpd.conf.
+      returns:
+          - name: conf
+            type: string
+
+    - name: SetConfig
+      description: >
+          Setup new snmpd.conf.
+      parameters:
+          - name: conf
+            type: string
+
+    - name: ResetConfig
+      description: >
+          Restore default version of snmpd.conf
+

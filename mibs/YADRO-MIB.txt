@@ -1,0 +1,712 @@
+YADRO-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,              
+    Integer32, enterprises 
+        FROM SNMPv2-SMI
+    TEXTUAL-CONVENTION 
+        FROM SNMPv2-TC 
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+;
+
+yadro MODULE-IDENTITY
+    LAST-UPDATED    "201802080000Z"
+    ORGANIZATION    "Yadro"
+    CONTACT-INFO    
+        "Primary Contact: SNMP support team
+         email:     snmp@yadro.com"
+    DESCRIPTION
+        "Added current and power sensor objects"
+    REVISION        "201802080000Z"
+    DESCRIPTION
+        "This MIB module defines objects for OpenBMC sensors derived data."
+    REVISION        "201712080000Z"
+    DESCRIPTION
+        "Add sensors state fields"
+    REVISION        "201711150000Z"
+    DESCRIPTION
+        "Add format for sensors values"
+    REVISION        "201711031000Z"
+    DESCRIPTION
+        "First draft"
+    ::= { enterprises 49769 }
+
+yadroNotifications      OBJECT IDENTIFIER ::= { yadro 0 }
+yadroSensors            OBJECT IDENTIFIER ::= { yadro 1 }
+yadroConformance        OBJECT IDENTIFIER ::= { yadro 2 }
+yadroCompliances        OBJECT IDENTIFIER ::= { yadroConformance 1 }
+yadroGroups             OBJECT IDENTIFIER ::= { yadroConformance 2 }
+
+--
+
+yadroHostPowerState OBJECT-TYPE
+    SYNTAX          INTEGER { unknown(-1), off(0), on(1) }
+    MAX-ACCESS      read-only
+    STATUS          current
+    DESCRIPTION
+        "Power state of the host"
+    DEFVAL { 0 }
+    ::= { yadroSensors 1 }
+
+--
+
+Degrees ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "d-3"
+    STATUS          current
+    DESCRIPTION     "Degrees Celsius"
+    SYNTAX          Integer32
+
+Voltage ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "d-3"
+    STATUS          current
+    DESCRIPTION     "Volt"
+    SYNTAX          Integer32
+
+RPMS ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "d-0"
+    STATUS          current
+    DESCRIPTION     "RPM"
+    SYNTAX          Integer32
+
+Current ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "d-3"
+    STATUS          current
+    DESCRIPTION     "Ampere"
+    SYNTAX          Integer32
+
+Power ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT    "d-3"
+    STATUS          current
+    DESCRIPTION     "Watt"
+    SYNTAX          Integer32
+
+SensorState ::= TEXTUAL-CONVENTION
+    STATUS          current
+    DESCRIPTION     "Actual state of sensor"
+    SYNTAX          INTEGER { 
+                              disabled(0),
+                              normal(1),
+                              warningLow(2),
+                              warningHigh(3),
+                              criticalLow(4),
+                              criticalHigh(5) 
+                            }
+
+--
+
+yadroTempSensorsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROTempSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of temperature sensors and their values."
+    ::= { yadroSensors 2 }
+
+yadroTempSensorsEntry OBJECT-TYPE
+    SYNTAX      YADROTempSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a device and its statistics."
+    INDEX       { yadroTempSensorName }
+    ::= { yadroTempSensorsTable 1 }
+
+YADROTempSensorsEntry ::= SEQUENCE {
+    yadroTempSensorName             OCTET STRING,
+    yadroTempSensorValue            Degrees,
+    yadroTempSensorWarnLow          Degrees,
+    yadroTempSensorWarnHigh         Degrees,
+    yadroTempSensorCritLow          Degrees,
+    yadroTempSensorCritHigh         Degrees,
+    yadroTempSensorState            SensorState
+}
+
+yadroTempSensorName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+        -- smilint show warning if it have other access level
+        -- If set read-only it will be showed in snmptable output, 
+        -- but with undefined '?' values.
+    STATUS      current
+    DESCRIPTION
+        "The name of the temperature sensor."
+    ::= { yadroTempSensorsEntry 1 }
+
+yadroTempSensorValue OBJECT-TYPE
+    SYNTAX      Degrees
+    UNITS       "°C"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current temperature from sensor."
+    ::= { yadroTempSensorsEntry 2 }
+
+yadroTempSensorWarnLow OBJECT-TYPE
+    SYNTAX      Degrees
+    UNITS       "°C"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning low value of sensor."
+    ::= { yadroTempSensorsEntry 3 }
+
+yadroTempSensorWarnHigh OBJECT-TYPE
+    SYNTAX      Degrees
+    UNITS       "°C"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning high value of sensor."
+    ::= { yadroTempSensorsEntry 4 }
+
+yadroTempSensorCritLow OBJECT-TYPE
+    SYNTAX      Degrees
+    UNITS       "°C"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical low value of sensor."
+    ::= { yadroTempSensorsEntry 5 }
+
+yadroTempSensorCritHigh OBJECT-TYPE
+    SYNTAX      Degrees
+    UNITS       "°C"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical high value of sensor."
+    ::= { yadroTempSensorsEntry 6 }
+
+yadroTempSensorState OBJECT-TYPE
+    SYNTAX      SensorState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current state of sensor"
+    ::= { yadroTempSensorsEntry 7 }
+
+--
+
+yadroVoltSensorsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROVoltSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of voltage sensors and their values."
+    ::= { yadroSensors 3 }
+
+yadroVoltSensorsEntry OBJECT-TYPE
+    SYNTAX      YADROVoltSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a device and its statistics."
+    INDEX       { yadroVoltSensorName }
+    ::= { yadroVoltSensorsTable 1 }
+
+YADROVoltSensorsEntry ::= SEQUENCE {
+    yadroVoltSensorName             OCTET STRING,
+    yadroVoltSensorValue            Voltage,
+    yadroVoltSensorWarnLow          Voltage,
+    yadroVoltSensorWarnHigh         Voltage,
+    yadroVoltSensorCritLow          Voltage,
+    yadroVoltSensorCritHigh         Voltage,
+    yadroVoltSensorState            SensorState
+}
+
+yadroVoltSensorName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+        -- smilint show warning if it have other access level
+        -- If set read-only it will be showed in snmptable output, 
+        -- but with undefined '?' values.
+    STATUS      current
+    DESCRIPTION
+        "The name of the voltage sensor."
+    ::= { yadroVoltSensorsEntry 1 }
+
+yadroVoltSensorValue OBJECT-TYPE
+    SYNTAX      Voltage
+    UNITS       "V"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current voltage from sensor."
+    ::= { yadroVoltSensorsEntry 2 }
+
+yadroVoltSensorWarnLow OBJECT-TYPE
+    SYNTAX      Voltage
+    UNITS       "V"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning low value of sensor."
+    ::= { yadroVoltSensorsEntry 3 }
+
+yadroVoltSensorWarnHigh OBJECT-TYPE
+    SYNTAX      Voltage
+    UNITS       "V"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning high value of sensor."
+    ::= { yadroVoltSensorsEntry 4 }
+
+yadroVoltSensorCritLow OBJECT-TYPE
+    SYNTAX      Voltage
+    UNITS       "V"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical low value of sensor."
+    ::= { yadroVoltSensorsEntry 5 }
+
+yadroVoltSensorCritHigh OBJECT-TYPE
+    SYNTAX      Voltage
+    UNITS       "V"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical high value of sensor."
+    ::= { yadroVoltSensorsEntry 6 }
+
+yadroVoltSensorState OBJECT-TYPE
+    SYNTAX      SensorState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current state of sensor"
+    ::= { yadroVoltSensorsEntry 7 }
+
+--
+
+yadroTachSensorsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROTachSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of tachometer sensors and their values."
+    ::= { yadroSensors 4 }
+
+yadroTachSensorsEntry OBJECT-TYPE
+    SYNTAX      YADROTachSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a device and its statistics."
+    INDEX       { yadroTachSensorName }
+    ::= { yadroTachSensorsTable 1 }
+
+YADROTachSensorsEntry ::= SEQUENCE {
+    yadroTachSensorName             OCTET STRING,
+    yadroTachSensorValue            RPMS,
+    yadroTachSensorWarnLow          RPMS,
+    yadroTachSensorWarnHigh         RPMS,
+    yadroTachSensorCritLow          RPMS,
+    yadroTachSensorCritHigh         RPMS,
+    yadroTachSensorState            SensorState
+}
+
+yadroTachSensorName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+        -- smilint show warning if it have other access level
+        -- If set read-only it will be showed in snmptable output, 
+        -- but with undefined '?' values.
+    STATUS      current
+    DESCRIPTION
+        "The name of the tachometer sensor."
+    ::= { yadroTachSensorsEntry 1 }
+
+yadroTachSensorValue OBJECT-TYPE
+    SYNTAX      RPMS
+    UNITS       "RPM"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current tachometer from sensor."
+    ::= { yadroTachSensorsEntry 2 }
+
+yadroTachSensorWarnLow OBJECT-TYPE
+    SYNTAX      RPMS
+    UNITS       "RPM"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning low value of sensor."
+    ::= { yadroTachSensorsEntry 3 }
+
+yadroTachSensorWarnHigh OBJECT-TYPE
+    SYNTAX      RPMS
+    UNITS       "RPM"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning high value of sensor."
+    ::= { yadroTachSensorsEntry 4 }
+
+yadroTachSensorCritLow OBJECT-TYPE
+    SYNTAX      RPMS
+    UNITS       "RPM"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical low value of sensor."
+    ::= { yadroTachSensorsEntry 5 }
+
+yadroTachSensorCritHigh OBJECT-TYPE
+    SYNTAX      RPMS
+    UNITS       "RPM"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical high value of sensor."
+    ::= { yadroTachSensorsEntry 6 }
+
+yadroTachSensorState OBJECT-TYPE
+    SYNTAX      SensorState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current state of sensor"
+    ::= { yadroTachSensorsEntry 7 }
+
+--
+
+yadroCurrSensorsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROCurrSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of current sensors and their values."
+    ::= { yadroSensors 5 }
+
+yadroCurrSensorsEntry OBJECT-TYPE
+    SYNTAX      YADROCurrSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a device and its statistics."
+    INDEX       { yadroCurrSensorName }
+    ::= { yadroCurrSensorsTable 1 }
+
+YADROCurrSensorsEntry ::= SEQUENCE {
+    yadroCurrSensorName             OCTET STRING,
+    yadroCurrSensorValue            Current,
+    yadroCurrSensorWarnLow          Current,
+    yadroCurrSensorWarnHigh         Current,
+    yadroCurrSensorCritLow          Current,
+    yadroCurrSensorCritHigh         Current,
+    yadroCurrSensorState            SensorState
+}
+
+yadroCurrSensorName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+        -- smilint show warning if it have other access level
+        -- If set read-only it will be showed in snmptable output, 
+        -- but with undefined '?' values.
+    STATUS      current
+    DESCRIPTION
+        "The name of the current sensor."
+    ::= { yadroCurrSensorsEntry 1 }
+
+yadroCurrSensorValue OBJECT-TYPE
+    SYNTAX      Current
+    UNITS       "A"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current amperage from sensor."
+    ::= { yadroCurrSensorsEntry 2 }
+
+yadroCurrSensorWarnLow OBJECT-TYPE
+    SYNTAX      Current
+    UNITS       "A"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning low value of sensor."
+    ::= { yadroCurrSensorsEntry 3 }
+
+yadroCurrSensorWarnHigh OBJECT-TYPE
+    SYNTAX      Current
+    UNITS       "A"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning high value of sensor."
+    ::= { yadroCurrSensorsEntry 4 }
+
+yadroCurrSensorCritLow OBJECT-TYPE
+    SYNTAX      Current
+    UNITS       "A"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical low value of sensor."
+    ::= { yadroCurrSensorsEntry 5 }
+
+yadroCurrSensorCritHigh OBJECT-TYPE
+    SYNTAX      Current
+    UNITS       "A"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical high value of sensor."
+    ::= { yadroCurrSensorsEntry 6 }
+
+yadroCurrSensorState OBJECT-TYPE
+    SYNTAX      SensorState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current state of sensor"
+    ::= { yadroCurrSensorsEntry 7 }
+
+--
+
+yadroPowerSensorsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROPowerSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of power sensors and their values."
+    ::= { yadroSensors 6 }
+
+yadroPowerSensorsEntry OBJECT-TYPE
+    SYNTAX      YADROPowerSensorsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a device and its statistics."
+    INDEX       { yadroPowerSensorName }
+    ::= { yadroPowerSensorsTable 1 }
+
+YADROPowerSensorsEntry ::= SEQUENCE {
+    yadroPowerSensorName             OCTET STRING,
+    yadroPowerSensorValue            Power,
+    yadroPowerSensorWarnLow          Power,
+    yadroPowerSensorWarnHigh         Power,
+    yadroPowerSensorCritLow          Power,
+    yadroPowerSensorCritHigh         Power,
+    yadroPowerSensorState            SensorState
+}
+
+yadroPowerSensorName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+        -- smilint show warning if it have other access level
+        -- If set read-only it will be showed in snmptable output, 
+        -- but with undefined '?' values.
+    STATUS      current
+    DESCRIPTION
+        "The name of the power sensor."
+    ::= { yadroPowerSensorsEntry 1 }
+
+yadroPowerSensorValue OBJECT-TYPE
+    SYNTAX      Power
+    UNITS       "W"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current amperage from sensor."
+    ::= { yadroPowerSensorsEntry 2 }
+
+yadroPowerSensorWarnLow OBJECT-TYPE
+    SYNTAX      Power
+    UNITS       "W"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning low value of sensor."
+    ::= { yadroPowerSensorsEntry 3 }
+
+yadroPowerSensorWarnHigh OBJECT-TYPE
+    SYNTAX      Power
+    UNITS       "W"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The warning high value of sensor."
+    ::= { yadroPowerSensorsEntry 4 }
+
+yadroPowerSensorCritLow OBJECT-TYPE
+    SYNTAX      Power
+    UNITS       "W"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical low value of sensor."
+    ::= { yadroPowerSensorsEntry 5 }
+
+yadroPowerSensorCritHigh OBJECT-TYPE
+    SYNTAX      Power
+    UNITS       "W"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The critical high value of sensor."
+    ::= { yadroPowerSensorsEntry 6 }
+
+yadroPowerSensorState OBJECT-TYPE
+    SYNTAX      SensorState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current state of sensor"
+    ::= { yadroPowerSensorsEntry 7 }
+
+--
+
+yadroHostPowerStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroHostPowerState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed power state of host"
+    ::= { yadroNotifications 1 }
+
+yadroTachSensorStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroTachSensorState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed state of tachometer sensor"
+    ::= { yadroNotifications 4 }
+
+yadroTempSensorStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroTempSensorState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed state of temperature sensor"
+    ::= { yadroNotifications 2 }
+
+yadroVoltSensorStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroVoltSensorState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed state of voltage sensor"
+    ::= { yadroNotifications 3 }
+
+yadroCurrSensorStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroCurrSensorState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed state of current sensor"
+    ::= { yadroNotifications 5 }
+
+yadroPowerSensorStateNotification NOTIFICATION-TYPE
+    OBJECTS     { yadroPowerSensorState }
+    STATUS      current
+    DESCRIPTION
+        "Notification about changed state of current sensor"
+    ::= { yadroNotifications 6 }
+
+--
+
+yadroCommpliance MODULE-COMPLIANCE
+    STATUS      current
+    DESCRIPTION
+        "The compliance statement for sensors"
+    MODULE      -- this module 
+    MANDATORY-GROUPS { yadroNotificationsGroup,
+                       yadroScalarFieldsGroup,
+                       yadroTempSensorsTableGroup,
+                       yadroVoltSensorsTableGroup,
+                       yadroTachSensorsTableGroup,
+                       yadroCurrSensorsTableGroup,
+                       yadroPowerSensorsTableGroup
+                     }
+    ::= { yadroCompliances 1 }
+
+yadroNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS   { yadroHostPowerStateNotification,
+                      yadroTachSensorStateNotification,
+                      yadroTempSensorStateNotification,
+                      yadroVoltSensorStateNotification,
+                      yadroCurrSensorStateNotification,
+                      yadroPowerSensorStateNotification
+                    }
+    STATUS      current
+    DESCRIPTION
+        "A collectopn of notifications"
+    ::= { yadroGroups 10 }
+
+yadroScalarFieldsGroup OBJECT-GROUP
+    OBJECTS     { yadroHostPowerState }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of scalar fields"
+    ::= { yadroGroups 1 }
+
+yadroTempSensorsTableGroup OBJECT-GROUP
+    OBJECTS     { yadroTempSensorValue,
+                  yadroTempSensorWarnLow,
+                  yadroTempSensorWarnHigh,
+                  yadroTempSensorCritLow,
+                  yadroTempSensorCritHigh,
+                  yadroTempSensorState
+                }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of objects providing information
+        about temperature sensors."
+    ::= { yadroGroups 2 }
+
+yadroVoltSensorsTableGroup OBJECT-GROUP
+    OBJECTS     { yadroVoltSensorValue,
+                  yadroVoltSensorWarnLow,
+                  yadroVoltSensorWarnHigh,
+                  yadroVoltSensorCritLow,
+                  yadroVoltSensorCritHigh,
+                  yadroVoltSensorState
+                }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of objects providing information
+        about voltage sensors."
+    ::= { yadroGroups 3 }
+
+yadroTachSensorsTableGroup OBJECT-GROUP
+    OBJECTS     { yadroTachSensorValue,
+                  yadroTachSensorWarnLow,
+                  yadroTachSensorWarnHigh,
+                  yadroTachSensorCritLow,
+                  yadroTachSensorCritHigh,
+                  yadroTachSensorState
+                }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of objects providing information
+        about tachometer sensors."
+    ::= { yadroGroups 4 }
+
+yadroCurrSensorsTableGroup OBJECT-GROUP
+    OBJECTS     { yadroTachSensorValue,
+                  yadroTachSensorWarnLow,
+                  yadroTachSensorWarnHigh,
+                  yadroTachSensorCritLow,
+                  yadroTachSensorCritHigh,
+                  yadroTachSensorState
+                }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of objects providing information
+        about current sensors."
+    ::= { yadroGroups 5 }
+
+yadroPowerSensorsTableGroup OBJECT-GROUP
+    OBJECTS     { yadroTachSensorValue,
+                  yadroTachSensorWarnLow,
+                  yadroTachSensorWarnHigh,
+                  yadroTachSensorCritLow,
+                  yadroTachSensorCritHigh,
+                  yadroTachSensorState
+                }
+    STATUS      current
+    DESCRIPTION 
+        "A collection of objects providing information
+        about power sensors."
+    ::= { yadroGroups 6 }
+
+END
