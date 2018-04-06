@@ -1,11 +1,11 @@
 YADRO-MIB DEFINITIONS ::= BEGIN
 
 IMPORTS
-    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,              
-    Integer32, enterprises 
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, enterprises
         FROM SNMPv2-SMI
-    TEXTUAL-CONVENTION 
-        FROM SNMPv2-TC 
+    TEXTUAL-CONVENTION
+        FROM SNMPv2-TC
     MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
         FROM SNMPv2-CONF
 ;
@@ -13,7 +13,7 @@ IMPORTS
 yadro MODULE-IDENTITY
     LAST-UPDATED    "201802080000Z"
     ORGANIZATION    "Yadro"
-    CONTACT-INFO    
+    CONTACT-INFO
         "Primary Contact: SNMP support team
          email:     snmp@yadro.com"
     DESCRIPTION
@@ -84,13 +84,13 @@ Power ::= TEXTUAL-CONVENTION
 SensorState ::= TEXTUAL-CONVENTION
     STATUS          current
     DESCRIPTION     "Actual state of sensor"
-    SYNTAX          INTEGER { 
+    SYNTAX          INTEGER {
                               disabled(0),
                               normal(1),
                               warningLow(2),
                               warningHigh(3),
                               criticalLow(4),
-                              criticalHigh(5) 
+                              criticalHigh(5)
                             }
 
 --
@@ -126,7 +126,7 @@ yadroTempSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output, 
+        -- If set read-only it will be showed in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -219,7 +219,7 @@ yadroVoltSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output, 
+        -- If set read-only it will be showed in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -312,7 +312,7 @@ yadroTachSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output, 
+        -- If set read-only it will be showed in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -405,7 +405,7 @@ yadroCurrSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output, 
+        -- If set read-only it will be showed in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -498,7 +498,7 @@ yadroPowerSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output, 
+        -- If set read-only it will be showed in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -608,7 +608,7 @@ yadroCommpliance MODULE-COMPLIANCE
     STATUS      current
     DESCRIPTION
         "The compliance statement for sensors"
-    MODULE      -- this module 
+    MODULE      -- this module
     MANDATORY-GROUPS { yadroNotificationsGroup,
                        yadroScalarFieldsGroup,
                        yadroTempSensorsTableGroup,
@@ -635,7 +635,7 @@ yadroNotificationsGroup NOTIFICATION-GROUP
 yadroScalarFieldsGroup OBJECT-GROUP
     OBJECTS     { yadroHostPowerState }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of scalar fields"
     ::= { yadroGroups 1 }
 
@@ -648,7 +648,7 @@ yadroTempSensorsTableGroup OBJECT-GROUP
                   yadroTempSensorState
                 }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of objects providing information
         about temperature sensors."
     ::= { yadroGroups 2 }
@@ -662,7 +662,7 @@ yadroVoltSensorsTableGroup OBJECT-GROUP
                   yadroVoltSensorState
                 }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of objects providing information
         about voltage sensors."
     ::= { yadroGroups 3 }
@@ -676,7 +676,7 @@ yadroTachSensorsTableGroup OBJECT-GROUP
                   yadroTachSensorState
                 }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of objects providing information
         about tachometer sensors."
     ::= { yadroGroups 4 }
@@ -690,7 +690,7 @@ yadroCurrSensorsTableGroup OBJECT-GROUP
                   yadroCurrSensorState
                 }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of objects providing information
         about current sensors."
     ::= { yadroGroups 5 }
@@ -704,7 +704,7 @@ yadroPowerSensorsTableGroup OBJECT-GROUP
                   yadroPowerSensorState
                 }
     STATUS      current
-    DESCRIPTION 
+    DESCRIPTION
         "A collection of objects providing information
         about power sensors."
     ::= { yadroGroups 6 }
