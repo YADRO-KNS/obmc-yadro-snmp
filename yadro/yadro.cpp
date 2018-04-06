@@ -30,21 +30,28 @@
 #include "yadro.hpp"
 #include "yadro_sensorstables.hpp"
 #include "sensors.hpp"
+#include "versions.hpp"
 #include "watcher.hpp"
 
 static yadrowatcher watcher;
-constexpr oid hostPowerState_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 1};
+
+#define YADRO_OID(args...) {1, 3, 6, 1, 5, 1, 49769, ##args}
+
+constexpr oid hostPowerState_oid[] = YADRO_OID(1, 1);
+constexpr oid versionBMC_oid[] = YADRO_OID(3, 1, 1);
+constexpr oid versionHFW_oid[] = YADRO_OID(3, 2, 1);
+
 /*
  * In the notification, we have to assign our notification OID to
  * the snmpTrapOID.0 object. Here is it's defintion.
  */
-constexpr oid objid_snmptrap_oid[]              = {1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0};
-constexpr oid hostPowerStateNotification_oid[]  = {1, 3, 6, 1, 4, 1, 49769, 0, 1};
-constexpr oid tachSensorStateNotification_oid[] = {1, 3, 6, 1, 4, 1, 49769, 0, 4};
-constexpr oid tempSensorStateNotification_oid[] = {1, 3, 6, 1, 4, 1, 49769, 0, 2};
-constexpr oid voltSensorStateNotification_oid[] = {1, 3, 6, 1, 4, 1, 49769, 0, 3};
-constexpr oid currSensorStateNotification_oid[] = {1, 3, 6, 1, 4, 1, 49769, 0, 5};
-constexpr oid powerSensorStateNotification_oid[] = {1, 3, 6, 1, 4, 1, 49769, 0, 6};
+constexpr oid objid_snmptrap_oid[] = {1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0};
+constexpr oid hostPowerStateNotification_oid[]  = YADRO_OID(0, 1);
+constexpr oid tachSensorStateNotification_oid[] = YADRO_OID(0, 4);
+constexpr oid tempSensorStateNotification_oid[] = YADRO_OID(0, 2);
+constexpr oid voltSensorStateNotification_oid[] = YADRO_OID(0, 3);
+constexpr oid currSensorStateNotification_oid[] = YADRO_OID(0, 5);
+constexpr oid powerSensorStateNotification_oid[] = YADRO_OID(0, 6);
 
 /**
  * @brief yadrowatcher object constructor
@@ -203,6 +210,34 @@ void yadrowatcher::sendTrap(const oid* trap_oid, size_t trap_oid_len,
     DEBUGMSGTL(("yadro:notification", "cleaning up\n"));
     snmp_free_varbind(notification_vars);
 }
+/**
+ * @brief Register snmp handler for reading scalar string
+ *
+ * @param name        - Name of string field
+ * @param str_oid     - Field OID
+ * @param str_oid_len - Length of field OID
+ * @param str         - Pointer to string buffer
+ * @param str_len     - Actual string length
+ * @param max_str_len - Max string length
+ */
+void init_yadro_string(const char *name, const oid *str_oid, size_t str_oid_len,
+                       char *str, size_t str_len, size_t max_str_len)
+{
+    DEBUGMSGTL(("yadro:init", "Initialize %s variable\n", name));
+
+    netsnmp_handler_registration* reg = netsnmp_create_handler_registration(
+                                            name, nullptr, str_oid, str_oid_len,
+                                            HANDLER_CAN_RONLY);
+
+    netsnmp_watcher_info *info = SNMP_MALLOC_TYPEDEF(netsnmp_watcher_info);
+    netsnmp_init_watcher_info6(info, str, str_len,
+                               ASN_OCTET_STR, WATCHER_MAX_SIZE,
+                               max_str_len, nullptr);
+
+    netsnmp_register_watched_instance2(reg, info);
+
+    DEBUGMSGTL(("yadro:init", "Done initializing %s variable\n", name));
+}
 
 extern "C" {
 
@@ -220,6 +255,14 @@ extern "C" {
                                       hostPowerState_oid,
                                       OID_LENGTH(hostPowerState_oid),
                                       &hostPowerState, nullptr);
+
+        init_yadro_string("yadroSoftwareBMCVersion",
+                          versionBMC_oid, OID_LENGTH(versionBMC_oid),
+                          versionBMC, strlen(versionBMC), VERSION_MAX_LEN);
+
+        init_yadro_string("yadroSoftwareHFWVersion",
+                          versionHFW_oid, OID_LENGTH(versionHFW_oid),
+                          versionHFW, strlen(versionHFW), VERSION_MAX_LEN);
 
         /* here we initialize all the tables we're planning on supporting */
         init_yadroTables();
@@ -242,6 +285,8 @@ extern "C" {
         drop_yadroTables();
 
         unregister_mib((oid*)hostPowerState_oid, OID_LENGTH(hostPowerState_oid));
+        unregister_mib((oid*)versionBMC_oid, OID_LENGTH(versionBMC_oid));
+        unregister_mib((oid*)versionHFW_oid, OID_LENGTH(versionHFW_oid));
 
         DEBUGMSGTL(("yadro:shutdown", "done destroing plugin.\n"));
     }

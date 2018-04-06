@@ -4,18 +4,21 @@ IMPORTS
     MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
     Integer32, enterprises
         FROM SNMPv2-SMI
-    TEXTUAL-CONVENTION
+    TEXTUAL-CONVENTION, DisplayString
         FROM SNMPv2-TC
     MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
         FROM SNMPv2-CONF
 ;
 
 yadro MODULE-IDENTITY
-    LAST-UPDATED    "201802080000Z"
+    LAST-UPDATED    "201804060000Z"
     ORGANIZATION    "Yadro"
     CONTACT-INFO
         "Primary Contact: SNMP support team
          email:     snmp@yadro.com"
+    DESCRIPTION
+        "Added BMC and BIOS firmwares versions"
+    REVISION        "201804060000Z"
     DESCRIPTION
         "Added current and power sensor objects"
     REVISION        "201802080000Z"
@@ -35,8 +38,11 @@ yadro MODULE-IDENTITY
 yadroNotifications      OBJECT IDENTIFIER ::= { yadro 0 }
 yadroSensors            OBJECT IDENTIFIER ::= { yadro 1 }
 yadroConformance        OBJECT IDENTIFIER ::= { yadro 2 }
+yadroSoftware           OBJECT IDENTIFIER ::= { yadro 3 }
 yadroCompliances        OBJECT IDENTIFIER ::= { yadroConformance 1 }
 yadroGroups             OBJECT IDENTIFIER ::= { yadroConformance 2 }
+yadroSoftwareBMC        OBJECT IDENTIFIER ::= { yadroSoftware 1 }
+yadroSoftwareHFW        OBJECT IDENTIFIER ::= { yadroSoftware 2 }
 
 --
 
@@ -604,6 +610,24 @@ yadroPwrSensorStateNotification NOTIFICATION-TYPE
 
 --
 
+yadroSoftwareBMCVersion OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(1..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "BMC Firmware version"
+    ::= { yadroSoftwareBMC 1 }
+
+yadroSoftwareHFWVersion OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(1..32))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Host firmware version"
+    ::= { yadroSoftwareHFW 1 }
+
+--
+
 yadroCommpliance MODULE-COMPLIANCE
     STATUS      current
     DESCRIPTION
@@ -633,7 +657,10 @@ yadroNotificationsGroup NOTIFICATION-GROUP
     ::= { yadroGroups 10 }
 
 yadroScalarFieldsGroup OBJECT-GROUP
-    OBJECTS     { yadroHostPowerState }
+    OBJECTS     { yadroHostPowerState,
+                  yadroSoftwareBMCVersion,
+                  yadroSoftwareHFWVersion
+                }
     STATUS      current
     DESCRIPTION
         "A collection of scalar fields"

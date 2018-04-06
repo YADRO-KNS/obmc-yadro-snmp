@@ -34,10 +34,6 @@ static constexpr auto SENSOR_CRITICAL = "xyz.openbmc_project.Sensor.Threshold.Cr
 
 #define SCALE_AND_ROUND(v, s) static_cast<int>((v + 0.5)/s)
 
-static constexpr auto Version = "xyz.openbmc_project.Software.Version";
-static constexpr auto Activation = "xyz.openbmc_project.Software.Activation";
-static constexpr auto ActiveState = "xyz.openbmc_project.Software.Activation.Activations.Active";
-
 /**
 * @brief dbuswatcher object constructor
 *
@@ -129,6 +125,78 @@ void dbuswatcher::updateSensors(void)
     }
 }
 /**
+ * @brief update BMC version
+ */
+void dbuswatcher::updateBMCVersion()
+{
+    using objects = std::vector<sdbusplus::message::object_path>;
+
+    auto ep = getProperty<objects>(
+            sdbusplus::helper::OBJECT_MAPPER_IFACE,
+            "/xyz/openbmc_project/software/active",
+            "org.openbmc.Association",
+            "endpoints");
+
+    std::string ver;
+
+    if (!ep.empty())
+    {
+        for (auto p : ep)
+        {
+            ver = getProperty<std::string>(
+                    "xyz.openbmc_project.Software.BMC.Updater",
+                    p.str,
+                    "xyz.openbmc_project.Software.Version",
+                    "Version");
+
+            if (!ver.empty())
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        // TODO: sometimes ObjectMapper return `endpoints` as array of `strings`
+        //       instead `object_pathes`. I do not understand yet - why.
+        //       This block of code fix this problem, however should be removed/rewrited.
+        using strings = std::vector<std::string>;
+        auto ep = getProperty<strings>(
+                sdbusplus::helper::OBJECT_MAPPER_IFACE,
+                "/xyz/openbmc_project/software/active",
+                "org.openbmc.Association",
+                "endpoints");
+        for (auto p : ep)
+        {
+            ver = getProperty<std::string>(
+                    "xyz.openbmc_project.Software.BMC.Updater",
+                    p,
+                    "xyz.openbmc_project.Software.Version",
+                    "Version");
+            if (!ver.empty())
+            {
+                break;
+            }
+        }
+    }
+
+    if (!ver.empty())
+    {
+        setBMCVersion(ver);
+    }
+}
+/**
+ * @brief update Host firmware version
+ */
+void dbuswatcher::updateHFWVersion(void)
+{
+    setHFWVersion(getProperty<std::string>(
+            "xyz.openbmc_project.Inventory.Manager",
+            "/xyz/openbmc_project/inventory/system/chassis/motherboard/opfw",
+            "xyz.openbmc_project.Inventory.Decorator.Revision",
+            "Version"));
+}
+/**
  * @brief Main loop
  */
 void dbuswatcher::run(void)
@@ -141,6 +209,16 @@ void dbuswatcher::run(void)
     if (isRunning())
     {
         updateSensors();
+    }
+
+    if (isRunning())
+    {
+        updateBMCVersion();
+    }
+
+    if (isRunning())
+    {
+        updateHFWVersion();
     }
 
     TRACE("Start watching...\n");
@@ -193,6 +271,26 @@ void dbuswatcher::powerStateChanged(int prev)
 {
     TRACE("Host power state change value: %d -> %d\n",
           prev, hostPowerState);
+}
+/**
+ * @brief Called when BMC Version changed.
+ */
+void dbuswatcher::versionBMCChanged(const std::string &prev)
+{
+    TRACE("BMC Version changed: '%s' -> '%s'\n",
+            prev.c_str(),
+            versionBMC);
+}
+/**
+ * @brief Called when Host firmware version changed.
+ *
+ * @param prev - previous version value
+ */
+void dbuswatcher::versionHFWChanged(const std::string& prev)
+{
+    TRACE("Host FW Version changed: '%s' -> '%s'\n",
+            prev.c_str(),
+            versionHFW);
 }
 /**
  * @brief Get from DBus object path folder and sensor name
@@ -530,5 +628,44 @@ void dbuswatcher::onPowerStateChanged(sdbusplus::message::message& m)
         {
             updateSensors();
         }
+    }
+}
+/**
+ * @brief Set BMC Version
+ *
+ * @param ver - new version
+ */
+void dbuswatcher::setBMCVersion(const std::string &ver)
+{
+    if (0 != ver.compare(versionBMC))
+    {
+        auto len = std::min<size_t>(VERSION_MAX_LEN, ver.size());
+        std::string prev(versionBMC);
+
+        memset(versionBMC, 0, sizeof(versionBMC));
+        memcpy(versionBMC, ver.data(), len);
+
+        versionBMCChanged(prev);
+    }
+    else
+        TRACE("setBMCVersion: versions ('%s' and '%s') is same.\n",
+              ver.c_str(), versionBMC);
+}
+/**
+ * @brief Set Host firmware version
+ *
+ * @param ver - new version
+ */
+void dbuswatcher::setHFWVersion(const std::string& ver)
+{
+    if (0 != ver.compare(versionHFW))
+    {
+        auto len = std::min<size_t>(VERSION_MAX_LEN, ver.size());
+        std::string prev(versionHFW);
+
+        memset(versionHFW, 0, sizeof(versionHFW));
+        memcpy(versionHFW, ver.data(), len);
+
+        versionHFWChanged(prev);
     }
 }

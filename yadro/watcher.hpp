@@ -26,6 +26,7 @@
 #include <unordered_map>                    // std::unordered_map
 #include "sdbus-helper.hpp"                 // sdbusplus::helper::helper
 #include "sensors.hpp"                      // sensor_t
+#include "versions.hpp"                     // versionBMC, versionHFW
 
 class dbuswatcher : public sdbusplus::helper::helper
 {
@@ -43,6 +44,8 @@ class dbuswatcher : public sdbusplus::helper::helper
 
         void            updatePowerState(void);
         void            updateSensors(void);
+        void            updateBMCVersion(void);
+        void            updateHFWVersion(void);
         void            run(void);
 
     protected:
@@ -53,6 +56,8 @@ class dbuswatcher : public sdbusplus::helper::helper
                                           const std::string& type,
                                           sensor_t::state_t prev);
         virtual void    powerStateChanged(int prev);
+        virtual void    versionBMCChanged(const std::string& prev);
+        virtual void    versionHFWChanged(const std::string& prev);
 
     private:
         // Tools
@@ -62,6 +67,8 @@ class dbuswatcher : public sdbusplus::helper::helper
                                         std::string& type) const;
         void            getSensorValues(const std::string& object,
                                         const std::string& path);
+        void            setBMCVersion(const std::string& ver);
+        void            setHFWVersion(const std::string& ver);
 
         void            onSensorsAdded(sdbusplus::message::message& m);
         void            onSensorsRemoved(sdbusplus::message::message& m);

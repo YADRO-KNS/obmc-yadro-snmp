@@ -4,6 +4,7 @@ yadro_la_SOURCES = \
 		yadro.cpp \
 		yadro_sensorstables.cpp \
 		sensors.cpp \
+		versions.cpp \
 		watcher.cpp
 
 yadro_la_CXXFLAGS = -I$(top_srcdir)/src $(SDBUSPLUS_CFLAGS)
