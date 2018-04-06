@@ -595,7 +595,7 @@ yadroCurrSensorStateNotification NOTIFICATION-TYPE
         "Notification about changed state of current sensor"
     ::= { yadroNotifications 5 }
 
-yadroPowerSensorStateNotification NOTIFICATION-TYPE
+yadroPwrSensorStateNotification NOTIFICATION-TYPE
     OBJECTS     { yadroPowerSensorState }
     STATUS      current
     DESCRIPTION
@@ -625,7 +625,7 @@ yadroNotificationsGroup NOTIFICATION-GROUP
                       yadroTempSensorStateNotification,
                       yadroVoltSensorStateNotification,
                       yadroCurrSensorStateNotification,
-                      yadroPowerSensorStateNotification
+                      yadroPwrSensorStateNotification
                     }
     STATUS      current
     DESCRIPTION
@@ -682,12 +682,12 @@ yadroTachSensorsTableGroup OBJECT-GROUP
     ::= { yadroGroups 4 }
 
 yadroCurrSensorsTableGroup OBJECT-GROUP
-    OBJECTS     { yadroTachSensorValue,
-                  yadroTachSensorWarnLow,
-                  yadroTachSensorWarnHigh,
-                  yadroTachSensorCritLow,
-                  yadroTachSensorCritHigh,
-                  yadroTachSensorState
+    OBJECTS     { yadroCurrSensorValue,
+                  yadroCurrSensorWarnLow,
+                  yadroCurrSensorWarnHigh,
+                  yadroCurrSensorCritLow,
+                  yadroCurrSensorCritHigh,
+                  yadroCurrSensorState
                 }
     STATUS      current
     DESCRIPTION 
@@ -696,12 +696,12 @@ yadroCurrSensorsTableGroup OBJECT-GROUP
     ::= { yadroGroups 5 }
 
 yadroPowerSensorsTableGroup OBJECT-GROUP
-    OBJECTS     { yadroTachSensorValue,
-                  yadroTachSensorWarnLow,
-                  yadroTachSensorWarnHigh,
-                  yadroTachSensorCritLow,
-                  yadroTachSensorCritHigh,
-                  yadroTachSensorState
+    OBJECTS     { yadroPowerSensorValue,
+                  yadroPowerSensorWarnLow,
+                  yadroPowerSensorWarnHigh,
+                  yadroPowerSensorCritLow,
+                  yadroPowerSensorCritHigh,
+                  yadroPowerSensorState
                 }
     STATUS      current
     DESCRIPTION 
