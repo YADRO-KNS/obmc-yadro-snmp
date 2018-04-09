@@ -26,6 +26,7 @@
 #include "sdbus-remote.hpp"                 // sdbus::bus::open_system()
 #include "watcher.hpp"                      // dbuswatcher
 
+#define OBJECT_MANAGER_IFACE "org.freedesktop.DBus.ObjectManager"
 #define OBJECT_MAPPER_IFACE  "xyz.openbmc_project.ObjectMapper"
 #define OBJECT_MAPPER_PATH   "/xyz/openbmc_project/object_mapper"
 #define DBUS_PROPETIES_IFACE "org.freedesktop.DBus.Properties"
@@ -44,21 +45,27 @@
 *
 * @param host - remote host (useful for debug only)
 */
-dbuswatcher::dbuswatcher(const char* host) : m_bus(sdbusplus::bus::open_system(
-                host))
-    , m_running(true)
+dbuswatcher::dbuswatcher(const char* host)
+            : m_bus(sdbusplus::bus::open_system(host))
+            , m_running(true)
 {
-    m_interfacesAddedMatch = std::make_shared<sdbusplus::bus::match::match>(
-                                 m_bus,
-                                 "type='signal',interface='org.freedesktop.DBus.ObjectManager',"
-                                 "member='InterfacesAdded',path='" SENSORS_FOLDER "'",
-                                 std::bind(&dbuswatcher::onInterfacesAdded, this, std::placeholders::_1));
+    m_sensorsAddedMatch = std::make_shared<match_t>(
+            m_bus,
+            "type='signal',interface='" OBJECT_MANAGER_IFACE "',"
+            "member='InterfacesAdded',path='" SENSORS_FOLDER "'",
+            std::bind(&dbuswatcher::onSensorsAdded, this, std::placeholders::_1));
 
-    m_powerStateMatch = std::make_shared<sdbusplus::bus::match::match>(
-                            m_bus,
-                            "type='signal',interface='" DBUS_PROPETIES_IFACE "',"
-                            "member='PropertiesChanged',path='" POWER_STATE_PATH "'",
-                            std::bind(&dbuswatcher::onPowerStateChanged, this, std::placeholders::_1));
+    m_powerStateMatch = std::make_shared<match_t>(
+            m_bus,
+            "type='signal',interface='" DBUS_PROPETIES_IFACE "',"
+            "member='PropertiesChanged',path='" POWER_STATE_PATH "'",
+            std::bind(&dbuswatcher::onPowerStateChanged, this, std::placeholders::_1));
+
+    m_sensorsRemovedMatch = std::make_shared<match_t>(
+            m_bus,
+            "type='signal', interface='" OBJECT_MANAGER_IFACE "',"
+            "member='InterfacesRemoved',path='" SENSORS_FOLDER "'",
+            std::bind(&dbuswatcher::onSensorsRemoved, this, std::placeholders::_1));
 }
 /**
  * @brief Get current host power state
@@ -340,11 +347,11 @@ void dbuswatcher::getSensorValues(const std::string& object,
     }
 }
 /**
- * @brief Called when sensor interface added to DBus
+ * @brief Called when sensors interface added to DBus
  *
  * @param m - DBus message reference
  */
-void dbuswatcher::onInterfacesAdded(sdbusplus::message::message& m)
+void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
 {
     sdbusplus::message::object_path path;
     std::map<std::string, std::map<std::string, sdbusplus::message::variant<int64_t, bool, std::string> > >
@@ -415,12 +422,49 @@ void dbuswatcher::onInterfacesAdded(sdbusplus::message::message& m)
         }
         else
         {
-            TRACE_ERROR("Unknown sensor found '%s'!\n", std::string(path).c_str());
+            TRACE_ERROR("Unknown sensor found '%s'!\n", path.str.c_str());
         }
     }
     else
     {
-        TRACE_ERROR("Invalid path received '%s'!\n", std::string(path).c_str());
+        TRACE_ERROR("Invalid path received '%s'!\n", path.str.c_str());
+    }
+}
+
+/**
+ * @brief Called when sensors interface removed from DBus.
+ *
+ * @param m - DBus message reference
+ */
+void dbuswatcher::onSensorsRemoved(sdbusplus::message::message& m)
+{
+    sdbusplus::message::object_path path;
+    std::vector<std::string> data;
+
+    m.read(path, data);
+
+    std::string name, type;
+    if (splitObjectPath(path.str, name, type))
+    {
+        sensors_arr_t& arr = getSensorsArr(type);
+        auto it = std::lower_bound(arr.begin(), arr.end(), name);
+        if (it != arr.end() && it->name == name)
+        {
+            m_sensorsMatches[path.str].reset();
+            auto prev = it->enable(false);
+            if (prev != it->state)
+            {
+                sensorChangeState(&(*it), type, prev);
+            }
+        }
+        else
+        {
+            TRACE_ERROR("Unknown sensor found '%s'!\n", path.str.c_str());
+        }
+    }
+    else
+    {
+        TRACE_ERROR("Invalid path received '%s'!\n", path.str.c_str());
     }
 }
 /**

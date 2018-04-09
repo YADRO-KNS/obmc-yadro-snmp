@@ -67,7 +67,8 @@ class dbuswatcher
         void            getSensorValues(const std::string& object,
                                         const std::string& path);
 
-        void            onInterfacesAdded(sdbusplus::message::message& m);
+        void            onSensorsAdded(sdbusplus::message::message& m);
+        void            onSensorsRemoved(sdbusplus::message::message& m);
         void            onPropertiesChanged(sensor_t* s,
                                             const std::string& type,
                                             int scale,
@@ -79,7 +80,8 @@ class dbuswatcher
 
         sdbusplus::bus::bus m_bus;          //!< DBus connection
         volatile bool m_running;            //!< Running flag
-        match_ptr m_interfacesAddedMatch;   //!< InterfacesAdded signals match
+        match_ptr m_sensorsAddedMatch;      //!< InterfacesAdded signals match in sensors folder
+        match_ptr m_sensorsRemovedMatch;    //!< InterfacesRemoved signals match in sensors folder
         matches_arr_t m_sensorsMatches;     //!< Collection of PropertiesChanged matches
                                             //!  for each active sensor
         match_ptr m_powerStateMatch;        //!< PropertiesChanged signal match for power state
