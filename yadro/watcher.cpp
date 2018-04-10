@@ -22,13 +22,9 @@
 
 #include <math.h>                           // powf()
 #include <tracing.hpp>                      // TRACE, TRACE_ERROR
-
-#include "sdbus-remote.hpp"                 // sdbus::bus::open_system()
 #include "watcher.hpp"                      // dbuswatcher
 
 #define OBJECT_MANAGER_IFACE "org.freedesktop.DBus.ObjectManager"
-#define OBJECT_MAPPER_IFACE  "xyz.openbmc_project.ObjectMapper"
-#define OBJECT_MAPPER_PATH   "/xyz/openbmc_project/object_mapper"
 #define DBUS_PROPETIES_IFACE "org.freedesktop.DBus.Properties"
 #define SENSORS_FOLDER       "/xyz/openbmc_project/sensors"
 #define POWER_STATE_IFACE    "org.openbmc.control.Power"
@@ -40,14 +36,17 @@
 
 #define SCALE_AND_ROUND(v, s) static_cast<int>((v + 0.5)/s)
 
+static constexpr auto Version = "xyz.openbmc_project.Software.Version";
+static constexpr auto Activation = "xyz.openbmc_project.Software.Activation";
+static constexpr auto ActiveState = "xyz.openbmc_project.Software.Activation.Activations.Active";
+
 /**
 * @brief dbuswatcher object constructor
 *
 * @param host - remote host (useful for debug only)
 */
 dbuswatcher::dbuswatcher(const char* host)
-            : m_bus(sdbusplus::bus::open_system(host))
-            , m_running(true)
+            : sdbusplus::helper::helper(host)
 {
     m_sensorsAddedMatch = std::make_shared<match_t>(
             m_bus,
@@ -74,23 +73,12 @@ void dbuswatcher::updatePowerState(void)
 {
     TRACE("Updating power state of host ...\n");
 
-    auto m = m_bus.new_method_call(POWER_STATE_IFACE,
-                                   POWER_STATE_PATH,
-                                   DBUS_PROPETIES_IFACE,
-                                   "Get");
-    m.append(POWER_STATE_IFACE, "state");
-    auto r = m_bus.call(m);
-    if (r.is_method_error())
-    {
-        TRACE_ERROR("Call Get('" POWER_STATE_IFACE "', 'state') failed!\n");
-        hostPowerState = -1;
-        return;
-    }
+    hostPowerState = getProperty<int32_t>(
+            POWER_STATE_IFACE,
+            POWER_STATE_PATH,
+            POWER_STATE_IFACE,
+            "state");
 
-    sdbusplus::message::variant<int32_t> d;
-    r.read(d);
-
-    hostPowerState = d.get<int32_t>();
     TRACE("Host power state is %d\n", hostPowerState);
 }
 /**
@@ -100,24 +88,13 @@ void dbuswatcher::updateSensors(void)
 {
     TRACE("Updating sensros ...\n");
 
-    auto m = m_bus.new_method_call(OBJECT_MAPPER_IFACE,
-                                   OBJECT_MAPPER_PATH,
-                                   OBJECT_MAPPER_IFACE,
-                                   "GetSubTree");
-    m.append(SENSORS_FOLDER, 5, std::vector<std::string>());
-    auto r = m_bus.call(m);
-    if (r.is_method_error())
-    {
-        TRACE_ERROR("Call GetSubTree() failed!\n");
-        return;
-    }
+    auto d = getSubTree(
+            SENSORS_FOLDER,
+            SENSOR_VALUE,
+            5);
 
-    std::map<std::string, std::map<std::string, std::vector<std::string> > > d;
     std::string name, type;
-
-    r.read(d);
-
-    // Disable active sensors witch not is present in answer
+    // Disable active sensors wich is not present in answer
     for (auto it = m_sensorsMatches.begin(); it != m_sensorsMatches.end();)
     {
         if (0 == d.count(it->first))
@@ -159,26 +136,21 @@ void dbuswatcher::updateSensors(void)
  */
 void dbuswatcher::run(void)
 {
-    if (m_running)
+    if (isRunning())
     {
         updatePowerState();
     }
 
-    if (m_running)
+    if (isRunning())
     {
         updateSensors();
     }
 
     TRACE("Start watching...\n");
 
-    while (m_running)
-    {
-        m_bus.process_discard();
-        if (m_running)
-        {
-            m_bus.wait(100000 /*microseconds*/);
-        }
-    }
+    loop();
+
+    TRACE("Stop watching...\n");
 }
 /**
  * @brief Called when current value of sensor changed
@@ -268,6 +240,9 @@ bool dbuswatcher::splitObjectPath(const std::string& path,
 void dbuswatcher::getSensorValues(const std::string& object,
                                   const std::string& path)
 {
+    using sensors_values_t = std::map<std::string,
+                                sdbusplus::message::variant<int64_t>>;
+
     std::string name, type;
     if (!splitObjectPath(path, name, type))
     {
@@ -278,22 +253,12 @@ void dbuswatcher::getSensorValues(const std::string& object,
     auto it = std::lower_bound(arr.begin(), arr.end(), name);
     if (it != arr.end() && it->name == name)
     {
-        auto m = m_bus.new_method_call(object.c_str(),
-                                       path.c_str(),
-                                       DBUS_PROPETIES_IFACE,
-                                       "GetAll");
-        m.append("");
-        auto r = m_bus.call(m);
-
-        if (m.is_method_error())
-        {
-            TRACE_ERROR("GetAll() for sensor '%s' failed!\n", path.c_str());
-            return;
-        }
-
-        std::map<std::string, sdbusplus::message::variant<std::string, int64_t, bool> >
-        d;
-        r.read(d);
+        auto d = callMethodAndRead<sensors_values_t>(
+                object,
+                path,
+                DBUS_PROPETIES_IFACE,
+                "GetAll",
+                "");
 
         int power = getSensorPower(type);
         if (d.count("Scale"))
@@ -305,7 +270,8 @@ void dbuswatcher::getSensorValues(const std::string& object,
 
         if (d.count("Value"))
         {
-            it->currentValue = SCALE_AND_ROUND(d["Value"].get<int64_t>(), scale);//scale * d["Value"].get<int64_t>();
+            it->currentValue =
+                SCALE_AND_ROUND(d["Value"].get<int64_t>(), scale);
         }
 
         if (d.count("CriticalHigh"))
@@ -553,7 +519,7 @@ void dbuswatcher::onPowerStateChanged(sdbusplus::message::message& m)
         powerStateChanged(value);
 
         // When host going down some sensors is lost.
-        if (hostPowerState == 0 && m_running)
+        if (hostPowerState == 0 && isRunning())
         {
             updateSensors();
         }
