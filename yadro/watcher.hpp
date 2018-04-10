@@ -24,13 +24,10 @@
 
 #include <string>                           // std::string
 #include <unordered_map>                    // std::unordered_map
-#include <sdbusplus/bus.hpp>                // sdbusplus::bus::bus
-#include <sdbusplus/bus/match.hpp>          // sdbusplus::bus::match::match
-#include <sdbusplus/message.hpp>            // sdbusplus::message::message
-
+#include "sdbus-helper.hpp"                 // sdbusplus::helper::helper
 #include "sensors.hpp"                      // sensor_t
 
-class dbuswatcher
+class dbuswatcher : public sdbusplus::helper::helper
 {
         // Internal types
 
@@ -47,7 +44,6 @@ class dbuswatcher
         void            updatePowerState(void);
         void            updateSensors(void);
         void            run(void);
-        void            terminate(void);
 
     protected:
         //
@@ -78,16 +74,9 @@ class dbuswatcher
     private:
         // Member variables
 
-        sdbusplus::bus::bus m_bus;          //!< DBus connection
-        volatile bool m_running;            //!< Running flag
         match_ptr m_sensorsAddedMatch;      //!< InterfacesAdded signals match in sensors folder
         match_ptr m_sensorsRemovedMatch;    //!< InterfacesRemoved signals match in sensors folder
         matches_arr_t m_sensorsMatches;     //!< Collection of PropertiesChanged matches
                                             //!  for each active sensor
         match_ptr m_powerStateMatch;        //!< PropertiesChanged signal match for power state
 };
-
-inline void dbuswatcher::terminate(void)
-{
-    m_running = false;
-}
