@@ -32,8 +32,8 @@ class dbuswatcher : public sdbusplus::helper::helper
         // Internal types
 
         using match_t = sdbusplus::bus::match::match;
-        using match_ptr = std::shared_ptr<match_t>;
-        using matches_arr_t = std::unordered_map<std::string, match_ptr>;
+        using matches_arr_t = std::vector<match_t>;
+        using matches_map_t = std::unordered_map<std::string, match_t>;
 
     public:
 
@@ -74,9 +74,8 @@ class dbuswatcher : public sdbusplus::helper::helper
     private:
         // Member variables
 
-        match_ptr m_sensorsAddedMatch;      //!< InterfacesAdded signals match in sensors folder
-        match_ptr m_sensorsRemovedMatch;    //!< InterfacesRemoved signals match in sensors folder
-        matches_arr_t m_sensorsMatches;     //!< Collection of PropertiesChanged matches
-                                            //!  for each active sensor
-        match_ptr m_powerStateMatch;        //!< PropertiesChanged signal match for power state
+        matches_arr_t m_staticMatches;      //!< Satic match rules.
+        matches_map_t m_sensorsMatches;     //!< Collection of match rules for
+                                            //!  `PropertiesChanged` signals for
+                                            //!  each active sensor
 };
