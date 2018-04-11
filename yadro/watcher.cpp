@@ -24,15 +24,13 @@
 #include <tracing.hpp>                      // TRACE, TRACE_ERROR
 #include "watcher.hpp"                      // dbuswatcher
 
-#define OBJECT_MANAGER_IFACE "org.freedesktop.DBus.ObjectManager"
-#define DBUS_PROPETIES_IFACE "org.freedesktop.DBus.Properties"
-#define SENSORS_FOLDER       "/xyz/openbmc_project/sensors"
-#define POWER_STATE_IFACE    "org.openbmc.control.Power"
-#define POWER_STATE_PATH     "/org/openbmc/control/power0"
+static constexpr auto SENSORS_FOLDER = "/xyz/openbmc_project/sensors";
+static constexpr auto POWER_STATE_IFACE = "org.openbmc.control.Power";
+static constexpr auto POWER_STATE_PATH = "/org/openbmc/control/power0";
 
-#define SENSOR_VALUE    "xyz.openbmc_project.Sensor.Value"
-#define SENSOR_WARNING  "xyz.openbmc_project.Sensor.Threshold.Warning"
-#define SENSOR_CRITICAL "xyz.openbmc_project.Sensor.Threshold.Critical"
+static constexpr auto SENSOR_VALUE = "xyz.openbmc_project.Sensor.Value";
+static constexpr auto SENSOR_WARNING = "xyz.openbmc_project.Sensor.Threshold.Warning";
+static constexpr auto SENSOR_CRITICAL = "xyz.openbmc_project.Sensor.Threshold.Critical";
 
 #define SCALE_AND_ROUND(v, s) static_cast<int>((v + 0.5)/s)
 
@@ -48,22 +46,21 @@ static constexpr auto ActiveState = "xyz.openbmc_project.Software.Activation.Act
 dbuswatcher::dbuswatcher(const char* host)
             : sdbusplus::helper::helper(host)
 {
+    using namespace sdbusplus::bus::match::rules;
+
     m_sensorsAddedMatch = std::make_shared<match_t>(
             m_bus,
-            "type='signal',interface='" OBJECT_MANAGER_IFACE "',"
-            "member='InterfacesAdded',path='" SENSORS_FOLDER "'",
+            interfacesAdded(SENSORS_FOLDER),
             std::bind(&dbuswatcher::onSensorsAdded, this, std::placeholders::_1));
 
     m_powerStateMatch = std::make_shared<match_t>(
             m_bus,
-            "type='signal',interface='" DBUS_PROPETIES_IFACE "',"
-            "member='PropertiesChanged',path='" POWER_STATE_PATH "'",
+            propertiesChanged(POWER_STATE_PATH),
             std::bind(&dbuswatcher::onPowerStateChanged, this, std::placeholders::_1));
 
     m_sensorsRemovedMatch = std::make_shared<match_t>(
             m_bus,
-            "type='signal', interface='" OBJECT_MANAGER_IFACE "',"
-            "member='InterfacesRemoved',path='" SENSORS_FOLDER "'",
+            interfacesRemoved(SENSORS_FOLDER),
             std::bind(&dbuswatcher::onSensorsRemoved, this, std::placeholders::_1));
 }
 /**
@@ -256,7 +253,7 @@ void dbuswatcher::getSensorValues(const std::string& object,
         auto d = callMethodAndRead<sensors_values_t>(
                 object,
                 path,
-                DBUS_PROPETIES_IFACE,
+                sdbusplus::helper::PROPETIES_IFACE,
                 "GetAll",
                 "");
 
@@ -294,12 +291,11 @@ void dbuswatcher::getSensorValues(const std::string& object,
             it->warningLow = scale * d["WarningLow"].get<int64_t>();
         }
 
-        m_sensorsMatches[path] = std::make_shared<match_t>(m_bus,
-                                 std::string(
-                                     "type='signal',interface='org.freedesktop.DBus.Properties',"
-                                     "member='PropertiesChanged',path='") + path + std::string("'"),
-                                 std::bind(&dbuswatcher::onPropertiesChanged, this, &(*it), type, scale,
-                                           std::placeholders::_1));
+        m_sensorsMatches[path] = std::make_shared<match_t>(
+                m_bus,
+                sdbusplus::bus::match::rules::propertiesChanged(path),
+                std::bind(&dbuswatcher::onPropertiesChanged, this, &(*it), type, scale,
+                       std::placeholders::_1));
 
         auto prev = it->enable(true);
         if (prev != it->state)
@@ -373,12 +369,11 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
                 }
             }
 
-            m_sensorsMatches[path.str] = std::make_shared<match_t>(m_bus,
-                                         std::string(
-                                             "type='signal',interface='org.freedesktop.DBus.Properties',"
-                                             "member='PropertiesChanged',path='") + path.str + std::string("'"),
-                                         std::bind(&dbuswatcher::onPropertiesChanged, this, &(*it), type, scale,
-                                                   std::placeholders::_1));
+            m_sensorsMatches[path.str] = std::make_shared<match_t>(
+                    m_bus,
+                    sdbusplus::bus::match::rules::propertiesChanged(path.str),
+                    std::bind(&dbuswatcher::onPropertiesChanged,
+                        this, &(*it), type, scale, std::placeholders::_1));
 
             auto prev = it->enable(true);
             if (prev != it->state)

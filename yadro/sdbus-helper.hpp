@@ -189,4 +189,19 @@ class helper
 };
 
 } // namespace helper
+
+namespace bus
+{
+namespace match
+{
+namespace rules
+{
+inline auto propertiesChanged(const std::string& p)
+{
+    return type::signal() + path(p) + member("PropertiesChanged") +
+           interface(sdbusplus::helper::PROPETIES_IFACE);
+}
+} // namespace rules
+} // namespace match
+} // namespace bus
 } // namespace sdbusplus
