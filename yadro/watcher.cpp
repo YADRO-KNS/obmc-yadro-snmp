@@ -48,17 +48,17 @@ dbuswatcher::dbuswatcher(const char* host)
 {
     using namespace sdbusplus::bus::match::rules;
 
-    m_sensorsAddedMatch = std::make_shared<match_t>(
+    m_staticMatches.emplace_back(
             m_bus,
             interfacesAdded(SENSORS_FOLDER),
             std::bind(&dbuswatcher::onSensorsAdded, this, std::placeholders::_1));
 
-    m_powerStateMatch = std::make_shared<match_t>(
+    m_staticMatches.emplace_back(
             m_bus,
             propertiesChanged(POWER_STATE_PATH),
             std::bind(&dbuswatcher::onPowerStateChanged, this, std::placeholders::_1));
 
-    m_sensorsRemovedMatch = std::make_shared<match_t>(
+    m_staticMatches.emplace_back(
             m_bus,
             interfacesRemoved(SENSORS_FOLDER),
             std::bind(&dbuswatcher::onSensorsRemoved, this, std::placeholders::_1));
@@ -291,11 +291,17 @@ void dbuswatcher::getSensorValues(const std::string& object,
             it->warningLow = scale * d["WarningLow"].get<int64_t>();
         }
 
-        m_sensorsMatches[path] = std::make_shared<match_t>(
-                m_bus,
-                sdbusplus::bus::match::rules::propertiesChanged(path),
-                std::bind(&dbuswatcher::onPropertiesChanged, this, &(*it), type, scale,
-                       std::placeholders::_1));
+        if (0 == m_sensorsMatches.count(path))
+        {
+            m_sensorsMatches.emplace(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(path),
+                    std::forward_as_tuple(
+                        m_bus,
+                        sdbusplus::bus::match::rules::propertiesChanged(path),
+                        std::bind(&dbuswatcher::onPropertiesChanged,
+                            this, &(*it), type, scale, std::placeholders::_1)));
+        }
 
         auto prev = it->enable(true);
         if (prev != it->state)
@@ -369,11 +375,17 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
                 }
             }
 
-            m_sensorsMatches[path.str] = std::make_shared<match_t>(
-                    m_bus,
-                    sdbusplus::bus::match::rules::propertiesChanged(path.str),
-                    std::bind(&dbuswatcher::onPropertiesChanged,
-                        this, &(*it), type, scale, std::placeholders::_1));
+            if (0 == m_sensorsMatches.count(path.str))
+            {
+                m_sensorsMatches.emplace(
+                        std::piecewise_construct,
+                        std::forward_as_tuple(path.str),
+                        std::forward_as_tuple(
+                            m_bus,
+                            sdbusplus::bus::match::rules::propertiesChanged(path.str),
+                            std::bind(&dbuswatcher::onPropertiesChanged,
+                                this, &(*it), type, scale, std::placeholders::_1)));
+            }
 
             auto prev = it->enable(true);
             if (prev != it->state)
@@ -411,7 +423,7 @@ void dbuswatcher::onSensorsRemoved(sdbusplus::message::message& m)
         auto it = std::lower_bound(arr.begin(), arr.end(), name);
         if (it != arr.end() && it->name == name)
         {
-            m_sensorsMatches[path.str].reset();
+            m_sensorsMatches.erase(path.str);
             auto prev = it->enable(false);
             if (prev != it->state)
             {
