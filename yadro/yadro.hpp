@@ -3,7 +3,7 @@
  *
  * This file is part of phosphor-snmp project.
  *
- * Copyright (c) 2018 YADRO (KNS Group LLC)
+ * Copyright (c) 2018 YADRO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
