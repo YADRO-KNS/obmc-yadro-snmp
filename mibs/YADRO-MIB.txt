@@ -126,7 +126,7 @@ yadroTempSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output,
+        -- If set read-only it will be shown in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -219,7 +219,7 @@ yadroVoltSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output,
+        -- If set read-only it will be shown in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -312,7 +312,7 @@ yadroTachSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output,
+        -- If set read-only it will be shown in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -405,7 +405,7 @@ yadroCurrSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output,
+        -- If set read-only it will be shown in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
@@ -498,7 +498,7 @@ yadroPowerSensorName OBJECT-TYPE
     SYNTAX      OCTET STRING (SIZE(1..32))
     MAX-ACCESS  not-accessible
         -- smilint show warning if it have other access level
-        -- If set read-only it will be showed in snmptable output,
+        -- If set read-only it will be shown in snmptable output,
         -- but with undefined '?' values.
     STATUS      current
     DESCRIPTION
