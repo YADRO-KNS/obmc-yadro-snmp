@@ -27,15 +27,16 @@
 #include <sdbusplus/server.hpp>
 #include <xyz/openbmc_project/SNMPCfg/server.hpp>
 
-using SNMPCfg_inherit = sdbusplus::server::object_t<sdbusplus::xyz::openbmc_project::server::SNMPCfg>;
+using SNMPCfg_inherit = sdbusplus::server::object_t<
+    sdbusplus::xyz::openbmc_project::server::SNMPCfg>;
 
 struct Configurator : SNMPCfg_inherit
 {
     const std::string snmpd_conf_path = "/etc/snmp/snmpd.conf";
     const std::string snmpd_orig_path = "/run/initramfs/ro/etc/snmp/snmpd.conf";
 
-    const std::string systemd_dst   = "org.freedesktop.systemd1";
-    const std::string systemd_path  = "/org/freedesktop/systemd1";
+    const std::string systemd_dst = "org.freedesktop.systemd1";
+    const std::string systemd_path = "/org/freedesktop/systemd1";
     const std::string systemd_iface = "org.freedesktop.systemd1.Manager";
 
     /**
@@ -44,8 +45,8 @@ struct Configurator : SNMPCfg_inherit
      * @param bus  - DBus connection object reference
      * @param path - DBus object path
      */
-    Configurator(sdbusplus::bus::bus& bus, const char* path)
-        : SNMPCfg_inherit(bus, path)
+    Configurator(sdbusplus::bus::bus& bus, const char* path) :
+        SNMPCfg_inherit(bus, path)
     {
     }
 
@@ -64,7 +65,7 @@ struct Configurator : SNMPCfg_inherit
         t.seekg(0, std::ios::beg);
 
         s.assign((std::istreambuf_iterator<char>(t)),
-                  std::istreambuf_iterator<char>());
+                 std::istreambuf_iterator<char>());
 
         return s;
     }
@@ -105,8 +106,7 @@ struct Configurator : SNMPCfg_inherit
         }
     }
 
-private:
-
+  private:
     /**
      * @brief Send systemd command over DBus
      *
@@ -114,13 +114,12 @@ private:
      *
      * @return true if success
      */
-    bool dbus_call (const char * method)
+    bool dbus_call(const char* method)
     {
         auto b = sdbusplus::bus::new_system();
         auto m = b.new_method_call("org.freedesktop.systemd1",
                                    "/org/freedesktop/systemd1",
-                                   "org.freedesktop.systemd1.Manager",
-                                   method);
+                                   "org.freedesktop.systemd1.Manager", method);
         m.append("snmpd.service", "replace");
         auto r = b.call(m);
         if (r.is_method_error())
@@ -132,8 +131,7 @@ private:
 #ifdef _DEBUG
         sdbusplus::message::object_path o;
         r.read(o);
-        printf("  %s() return '%s'\n",
-                method, o.str.c_str());
+        printf("  %s() return '%s'\n", method, o.str.c_str());
 #endif
 
         return true;

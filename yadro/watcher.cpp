@@ -20,44 +20,42 @@
  * @author: Alexander Filippov <a.filippov@yadro.com>
  */
 
-#include <math.h>                           // powf()
-#include <tracing.hpp>                      // TRACE, TRACE_ERROR
-#include "watcher.hpp"                      // dbuswatcher
+#include <math.h>      // powf()
+#include <tracing.hpp> // TRACE, TRACE_ERROR
+#include "watcher.hpp" // dbuswatcher
 
 static constexpr auto SENSORS_FOLDER = "/xyz/openbmc_project/sensors";
 static constexpr auto POWER_STATE_IFACE = "org.openbmc.control.Power";
 static constexpr auto POWER_STATE_PATH = "/org/openbmc/control/power0";
 
 static constexpr auto SENSOR_VALUE = "xyz.openbmc_project.Sensor.Value";
-static constexpr auto SENSOR_WARNING = "xyz.openbmc_project.Sensor.Threshold.Warning";
-static constexpr auto SENSOR_CRITICAL = "xyz.openbmc_project.Sensor.Threshold.Critical";
+static constexpr auto SENSOR_WARNING =
+    "xyz.openbmc_project.Sensor.Threshold.Warning";
+static constexpr auto SENSOR_CRITICAL =
+    "xyz.openbmc_project.Sensor.Threshold.Critical";
 
-#define SCALE_AND_ROUND(v, s) static_cast<int>((v + 0.5)/s)
+#define SCALE_AND_ROUND(v, s) static_cast<int>((v + 0.5) / s)
 
 /**
-* @brief dbuswatcher object constructor
-*
-* @param host - remote host (useful for debug only)
-*/
-dbuswatcher::dbuswatcher(const char* host)
-            : sdbusplus::helper::helper(host)
+ * @brief dbuswatcher object constructor
+ *
+ * @param host - remote host (useful for debug only)
+ */
+dbuswatcher::dbuswatcher(const char* host) : sdbusplus::helper::helper(host)
 {
     using namespace sdbusplus::bus::match::rules;
 
     m_staticMatches.emplace_back(
-            m_bus,
-            interfacesAdded(SENSORS_FOLDER),
-            std::bind(&dbuswatcher::onSensorsAdded, this, std::placeholders::_1));
+        m_bus, interfacesAdded(SENSORS_FOLDER),
+        std::bind(&dbuswatcher::onSensorsAdded, this, std::placeholders::_1));
+
+    m_staticMatches.emplace_back(m_bus, propertiesChanged(POWER_STATE_PATH),
+                                 std::bind(&dbuswatcher::onPowerStateChanged,
+                                           this, std::placeholders::_1));
 
     m_staticMatches.emplace_back(
-            m_bus,
-            propertiesChanged(POWER_STATE_PATH),
-            std::bind(&dbuswatcher::onPowerStateChanged, this, std::placeholders::_1));
-
-    m_staticMatches.emplace_back(
-            m_bus,
-            interfacesRemoved(SENSORS_FOLDER),
-            std::bind(&dbuswatcher::onSensorsRemoved, this, std::placeholders::_1));
+        m_bus, interfacesRemoved(SENSORS_FOLDER),
+        std::bind(&dbuswatcher::onSensorsRemoved, this, std::placeholders::_1));
 }
 /**
  * @brief Get current host power state
@@ -66,11 +64,8 @@ void dbuswatcher::updatePowerState(void)
 {
     TRACE("Updating power state of host ...\n");
 
-    hostPowerState = getProperty<int32_t>(
-            POWER_STATE_IFACE,
-            POWER_STATE_PATH,
-            POWER_STATE_IFACE,
-            "state");
+    hostPowerState = getProperty<int32_t>(POWER_STATE_IFACE, POWER_STATE_PATH,
+                                          POWER_STATE_IFACE, "state");
 
     TRACE("Host power state is %d\n", hostPowerState);
 }
@@ -81,10 +76,7 @@ void dbuswatcher::updateSensors(void)
 {
     TRACE("Updating sensros ...\n");
 
-    auto d = getSubTree(
-            SENSORS_FOLDER,
-            SENSOR_VALUE,
-            5);
+    auto d = getSubTree(SENSORS_FOLDER, SENSOR_VALUE, 5);
 
     std::string name, type;
     // Disable active sensors wich is not present in answer
@@ -131,11 +123,9 @@ void dbuswatcher::updateBMCVersion()
 {
     using objects = std::vector<sdbusplus::message::object_path>;
 
-    auto ep = getProperty<objects>(
-            sdbusplus::helper::OBJECT_MAPPER_IFACE,
-            "/xyz/openbmc_project/software/active",
-            "org.openbmc.Association",
-            "endpoints");
+    auto ep = getProperty<objects>(sdbusplus::helper::OBJECT_MAPPER_IFACE,
+                                   "/xyz/openbmc_project/software/active",
+                                   "org.openbmc.Association", "endpoints");
 
     std::string ver;
 
@@ -144,10 +134,8 @@ void dbuswatcher::updateBMCVersion()
         for (auto p : ep)
         {
             ver = getProperty<std::string>(
-                    "xyz.openbmc_project.Software.BMC.Updater",
-                    p.str,
-                    "xyz.openbmc_project.Software.Version",
-                    "Version");
+                "xyz.openbmc_project.Software.BMC.Updater", p.str,
+                "xyz.openbmc_project.Software.Version", "Version");
 
             if (!ver.empty())
             {
@@ -159,20 +147,17 @@ void dbuswatcher::updateBMCVersion()
     {
         // TODO: sometimes ObjectMapper return `endpoints` as array of `strings`
         //       instead `object_pathes`. I do not understand yet - why.
-        //       This block of code fix this problem, however should be removed/rewrited.
+        //       This block of code fix this problem, however should be
+        //       removed/rewrited.
         using strings = std::vector<std::string>;
-        auto ep = getProperty<strings>(
-                sdbusplus::helper::OBJECT_MAPPER_IFACE,
-                "/xyz/openbmc_project/software/active",
-                "org.openbmc.Association",
-                "endpoints");
+        auto ep = getProperty<strings>(sdbusplus::helper::OBJECT_MAPPER_IFACE,
+                                       "/xyz/openbmc_project/software/active",
+                                       "org.openbmc.Association", "endpoints");
         for (auto p : ep)
         {
             ver = getProperty<std::string>(
-                    "xyz.openbmc_project.Software.BMC.Updater",
-                    p,
-                    "xyz.openbmc_project.Software.Version",
-                    "Version");
+                "xyz.openbmc_project.Software.BMC.Updater", p,
+                "xyz.openbmc_project.Software.Version", "Version");
             if (!ver.empty())
             {
                 break;
@@ -191,10 +176,9 @@ void dbuswatcher::updateBMCVersion()
 void dbuswatcher::updateHFWVersion(void)
 {
     setHFWVersion(getProperty<std::string>(
-            "xyz.openbmc_project.Inventory.Manager",
-            "/xyz/openbmc_project/inventory/system/chassis/motherboard/opfw",
-            "xyz.openbmc_project.Inventory.Decorator.Revision",
-            "Version"));
+        "xyz.openbmc_project.Inventory.Manager",
+        "/xyz/openbmc_project/inventory/system/chassis/motherboard/opfw",
+        "xyz.openbmc_project.Inventory.Decorator.Revision", "Version"));
 }
 /**
  * @brief Main loop
@@ -235,8 +219,8 @@ void dbuswatcher::run(void)
  */
 void dbuswatcher::sensorChangeValue(sensor_t* sensor, int prev)
 {
-    TRACE("Sensor '%s' [%d] change value: %d -> %d\n",
-          sensor->name.c_str(), sensor->state, prev, sensor->currentValue);
+    TRACE("Sensor '%s' [%d] change value: %d -> %d\n", sensor->name.c_str(),
+          sensor->state, prev, sensor->currentValue);
 }
 /**
  * @brief Called when state of sensor changed
@@ -250,16 +234,14 @@ void dbuswatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
     if (prev == sensor_t::E_DISABLED)
     {
         TRACE("Activate %s sensor '%s': {%d, %d, %d, %d, %d} state: %d\n",
-              type.c_str(),
-              sensor->name.c_str(), sensor->currentValue,
-              sensor->warningLow,   sensor->warningHigh,
-              sensor->criticalLow,  sensor->criticalHigh,
-              sensor->state);
+              type.c_str(), sensor->name.c_str(), sensor->currentValue,
+              sensor->warningLow, sensor->warningHigh, sensor->criticalLow,
+              sensor->criticalHigh, sensor->state);
     }
     else
     {
-        TRACE("%s sensor '%s' change state: %d -> %d\n",
-              type.c_str(), sensor->name.c_str(), prev,  sensor->state);
+        TRACE("%s sensor '%s' change state: %d -> %d\n", type.c_str(),
+              sensor->name.c_str(), prev, sensor->state);
     }
 }
 /**
@@ -269,17 +251,16 @@ void dbuswatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
  */
 void dbuswatcher::powerStateChanged(int prev)
 {
-    TRACE("Host power state change value: %d -> %d\n",
-          prev, hostPowerState);
+    TRACE("Host power state change value: %d -> %d\n", prev, hostPowerState);
 }
 /**
  * @brief Called when BMC Version changed.
+ *
+ * @param prev - previous version value
  */
-void dbuswatcher::versionBMCChanged(const std::string &prev)
+void dbuswatcher::versionBMCChanged(const std::string& prev)
 {
-    TRACE("BMC Version changed: '%s' -> '%s'\n",
-            prev.c_str(),
-            versionBMC);
+    TRACE("BMC Version changed: '%s' -> '%s'\n", prev.c_str(), versionBMC);
 }
 /**
  * @brief Called when Host firmware version changed.
@@ -288,9 +269,7 @@ void dbuswatcher::versionBMCChanged(const std::string &prev)
  */
 void dbuswatcher::versionHFWChanged(const std::string& prev)
 {
-    TRACE("Host FW Version changed: '%s' -> '%s'\n",
-            prev.c_str(),
-            versionHFW);
+    TRACE("Host FW Version changed: '%s' -> '%s'\n", prev.c_str(), versionHFW);
 }
 /**
  * @brief Get from DBus object path folder and sensor name
@@ -301,8 +280,8 @@ void dbuswatcher::versionHFWChanged(const std::string& prev)
  *
  * @return     - true if success
  */
-bool dbuswatcher::splitObjectPath(const std::string& path,
-                                  std::string& name, std::string& type) const
+bool dbuswatcher::splitObjectPath(const std::string& path, std::string& name,
+                                  std::string& type) const
 {
     size_t n = path.rfind('/');
     if (n != std::string::npos)
@@ -316,7 +295,8 @@ bool dbuswatcher::splitObjectPath(const std::string& path,
         }
         else
         {
-            TRACE_ERROR("splitObjectPath('%s') no folder found!\n", path.c_str());
+            TRACE_ERROR("splitObjectPath('%s') no folder found!\n",
+                        path.c_str());
         }
     }
     else
@@ -335,8 +315,8 @@ bool dbuswatcher::splitObjectPath(const std::string& path,
 void dbuswatcher::getSensorValues(const std::string& object,
                                   const std::string& path)
 {
-    using sensors_values_t = std::map<std::string,
-                                sdbusplus::message::variant<int64_t>>;
+    using sensors_values_t =
+        std::map<std::string, sdbusplus::message::variant<int64_t>>;
 
     std::string name, type;
     if (!splitObjectPath(path, name, type))
@@ -349,11 +329,7 @@ void dbuswatcher::getSensorValues(const std::string& object,
     if (it != arr.end() && it->name == name)
     {
         auto d = callMethodAndRead<sensors_values_t>(
-                object,
-                path,
-                sdbusplus::helper::PROPETIES_IFACE,
-                "GetAll",
-                "");
+            object, path, sdbusplus::helper::PROPETIES_IFACE, "GetAll", "");
 
         int power = getSensorPower(type);
         if (d.count("Scale"))
@@ -392,13 +368,12 @@ void dbuswatcher::getSensorValues(const std::string& object,
         if (0 == m_sensorsMatches.count(path))
         {
             m_sensorsMatches.emplace(
-                    std::piecewise_construct,
-                    std::forward_as_tuple(path),
-                    std::forward_as_tuple(
-                        m_bus,
-                        sdbusplus::bus::match::rules::propertiesChanged(path),
-                        std::bind(&dbuswatcher::onPropertiesChanged,
-                            this, &(*it), type, scale, std::placeholders::_1)));
+                std::piecewise_construct, std::forward_as_tuple(path),
+                std::forward_as_tuple(
+                    m_bus,
+                    sdbusplus::bus::match::rules::propertiesChanged(path),
+                    std::bind(&dbuswatcher::onPropertiesChanged, this, &(*it),
+                              type, scale, std::placeholders::_1)));
         }
 
         auto prev = it->enable(true);
@@ -409,7 +384,8 @@ void dbuswatcher::getSensorValues(const std::string& object,
     }
     else
     {
-        TRACE_ERROR("Unknown %s sensor '%s' found!\n", type.c_str(), name.c_str());
+        TRACE_ERROR("Unknown %s sensor '%s' found!\n", type.c_str(),
+                    name.c_str());
     }
 }
 /**
@@ -420,8 +396,10 @@ void dbuswatcher::getSensorValues(const std::string& object,
 void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
 {
     sdbusplus::message::object_path path;
-    std::map<std::string, std::map<std::string, sdbusplus::message::variant<int64_t, bool, std::string> > >
-    data;
+    std::map<std::string,
+             std::map<std::string,
+                      sdbusplus::message::variant<int64_t, bool, std::string>>>
+        data;
 
     m.read(path, data);
 
@@ -443,20 +421,24 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
 
             if (data.count(SENSOR_VALUE) && data[SENSOR_VALUE].count("Value"))
             {
-                it->currentValue = SCALE_AND_ROUND(data[SENSOR_VALUE]["Value"].get<int64_t>(), scale);//scale * data[SENSOR_VALUE]["Value"].get<int64_t>();
+                it->currentValue = SCALE_AND_ROUND(
+                    data[SENSOR_VALUE]["Value"].get<int64_t>(), scale);
             }
 
             if (data.count(SENSOR_CRITICAL))
             {
                 if (data[SENSOR_CRITICAL].count("CriticalHigh"))
                 {
-                    it->criticalHigh = scale *
-                                       data[SENSOR_CRITICAL]["CriticalHigh"].get<int64_t>();
+                    it->criticalHigh =
+                        scale *
+                        data[SENSOR_CRITICAL]["CriticalHigh"].get<int64_t>();
                 }
 
                 if (data[SENSOR_CRITICAL].count("CriticalLow"))
                 {
-                    it->criticalLow = scale * data[SENSOR_CRITICAL]["CriticalLow"].get<int64_t>();
+                    it->criticalLow =
+                        scale *
+                        data[SENSOR_CRITICAL]["CriticalLow"].get<int64_t>();
                 }
             }
 
@@ -464,25 +446,29 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
             {
                 if (data[SENSOR_WARNING].count("WarningHigh"))
                 {
-                    it->warningHigh = scale * data[SENSOR_WARNING]["WarningHigh"].get<int64_t>();
+                    it->warningHigh =
+                        scale *
+                        data[SENSOR_WARNING]["WarningHigh"].get<int64_t>();
                 }
 
                 if (data[SENSOR_WARNING].count("WarningLow"))
                 {
-                    it->warningLow = scale * data[SENSOR_WARNING]["WarningLow"].get<int64_t>();
+                    it->warningLow =
+                        scale *
+                        data[SENSOR_WARNING]["WarningLow"].get<int64_t>();
                 }
             }
 
             if (0 == m_sensorsMatches.count(path.str))
             {
                 m_sensorsMatches.emplace(
-                        std::piecewise_construct,
-                        std::forward_as_tuple(path.str),
-                        std::forward_as_tuple(
-                            m_bus,
-                            sdbusplus::bus::match::rules::propertiesChanged(path.str),
-                            std::bind(&dbuswatcher::onPropertiesChanged,
-                                this, &(*it), type, scale, std::placeholders::_1)));
+                    std::piecewise_construct, std::forward_as_tuple(path.str),
+                    std::forward_as_tuple(
+                        m_bus,
+                        sdbusplus::bus::match::rules::propertiesChanged(
+                            path.str),
+                        std::bind(&dbuswatcher::onPropertiesChanged, this,
+                                  &(*it), type, scale, std::placeholders::_1)));
             }
 
             auto prev = it->enable(true);
@@ -550,8 +536,9 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
                                       int scale, sdbusplus::message::message& m)
 {
     std::string iface;
-    std::map<std::string, sdbusplus::message::variant<int64_t, bool, std::string> >
-    data;
+    std::map<std::string,
+             sdbusplus::message::variant<int64_t, bool, std::string>>
+        data;
     std::vector<std::string> v;
 
     m.read(iface, data, v);
@@ -566,17 +553,17 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
     {
         if (data.count("WarningAlarmHigh"))
         {
-            auto value = (data["WarningAlarmHigh"].get<bool>()
-                          ? sensor_t::E_WARNING_HIGH
-                          : sensor_t::E_NORMAL);
+            auto value =
+                (data["WarningAlarmHigh"].get<bool>() ? sensor_t::E_WARNING_HIGH
+                                                      : sensor_t::E_NORMAL);
             std::swap(s->state, value);
             sensorChangeState(s, type, value);
         }
         else if (data.count("WarningAlarmLow"))
         {
-            auto value = (data["WarningAlarmLow"].get<bool>()
-                          ? sensor_t::E_WARNING_LOW
-                          : sensor_t::E_NORMAL);
+            auto value =
+                (data["WarningAlarmLow"].get<bool>() ? sensor_t::E_WARNING_LOW
+                                                     : sensor_t::E_NORMAL);
             std::swap(s->state, value);
             sensorChangeState(s, type, value);
         }
@@ -586,23 +573,23 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
         if (data.count("CriticalAlarmHigh"))
         {
             auto value = (data["CriticalAlarmHigh"].get<bool>()
-                          ? sensor_t::E_CRITICAL_HIGH
-                          : sensor_t::E_NORMAL);
+                              ? sensor_t::E_CRITICAL_HIGH
+                              : sensor_t::E_NORMAL);
             std::swap(s->state, value);
             sensorChangeState(s, type, value);
         }
         else if (data.count("CriticalAlarmLow"))
         {
-            auto value = (data["CriticalAlarmLow"].get<bool>()
-                          ? sensor_t::E_CRITICAL_LOW
-                          : sensor_t::E_NORMAL);
+            auto value =
+                (data["CriticalAlarmLow"].get<bool>() ? sensor_t::E_CRITICAL_LOW
+                                                      : sensor_t::E_NORMAL);
             std::swap(s->state, value);
             sensorChangeState(s, type, value);
         }
     }
     else
-        TRACE("Skip changed property '%s' for sensor '%s'\n",
-              iface.c_str(), s->name.c_str());
+        TRACE("Skip changed property '%s' for sensor '%s'\n", iface.c_str(),
+              s->name.c_str());
 }
 /**
  * @brief Called when received DBus signal about changed host power state
@@ -612,7 +599,7 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
 void dbuswatcher::onPowerStateChanged(sdbusplus::message::message& m)
 {
     std::string iface;
-    std::map<std::string, sdbusplus::message::variant<int32_t> > data;
+    std::map<std::string, sdbusplus::message::variant<int32_t>> data;
     std::vector<std::string> v;
 
     m.read(iface, data, v);
@@ -635,7 +622,7 @@ void dbuswatcher::onPowerStateChanged(sdbusplus::message::message& m)
  *
  * @param ver - new version
  */
-void dbuswatcher::setBMCVersion(const std::string &ver)
+void dbuswatcher::setBMCVersion(const std::string& ver)
 {
     if (0 != ver.compare(versionBMC))
     {
@@ -648,8 +635,8 @@ void dbuswatcher::setBMCVersion(const std::string &ver)
         versionBMCChanged(prev);
     }
     else
-        TRACE("setBMCVersion: versions ('%s' and '%s') is same.\n",
-              ver.c_str(), versionBMC);
+        TRACE("setBMCVersion: versions ('%s' and '%s') is same.\n", ver.c_str(),
+              versionBMC);
 }
 /**
  * @brief Set Host firmware version

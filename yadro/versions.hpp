@@ -26,4 +26,3 @@
 
 extern char versionBMC[VERSION_MAX_LEN + 1];
 extern char versionHFW[VERSION_MAX_LEN + 1];
-

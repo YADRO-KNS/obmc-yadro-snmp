@@ -24,4 +24,3 @@
 
 char versionBMC[VERSION_MAX_LEN + 1] = "";
 char versionHFW[VERSION_MAX_LEN + 1] = "";
-

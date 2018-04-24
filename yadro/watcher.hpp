@@ -22,67 +22,61 @@
 
 #pragma once
 
-#include <string>                           // std::string
-#include <unordered_map>                    // std::unordered_map
-#include "sdbus-helper.hpp"                 // sdbusplus::helper::helper
-#include "sensors.hpp"                      // sensor_t
-#include "versions.hpp"                     // versionBMC, versionHFW
+#include <string>           // std::string
+#include <unordered_map>    // std::unordered_map
+#include "sdbus-helper.hpp" // sdbusplus::helper::helper
+#include "sensors.hpp"      // sensor_t
+#include "versions.hpp"     // versionBMC, versionHFW
 
 class dbuswatcher : public sdbusplus::helper::helper
 {
-        // Internal types
+    // Internal types
 
-        using match_t = sdbusplus::bus::match::match;
-        using matches_arr_t = std::vector<match_t>;
-        using matches_map_t = std::unordered_map<std::string, match_t>;
+    using match_t = sdbusplus::bus::match::match;
+    using matches_arr_t = std::vector<match_t>;
+    using matches_map_t = std::unordered_map<std::string, match_t>;
 
-    public:
+  public:
+    dbuswatcher(const char* host = nullptr);
 
-        dbuswatcher(const char* host = nullptr);
+    // API
 
-        // API
+    void updatePowerState(void);
+    void updateSensors(void);
+    void updateBMCVersion(void);
+    void updateHFWVersion(void);
+    void run(void);
 
-        void            updatePowerState(void);
-        void            updateSensors(void);
-        void            updateBMCVersion(void);
-        void            updateHFWVersion(void);
-        void            run(void);
+  protected:
+    //
 
-    protected:
-        //
+    virtual void sensorChangeValue(sensor_t* sensor, int prev);
+    virtual void sensorChangeState(sensor_t* sensor, const std::string& type,
+                                   sensor_t::state_t prev);
+    virtual void powerStateChanged(int prev);
+    virtual void versionBMCChanged(const std::string& prev);
+    virtual void versionHFWChanged(const std::string& prev);
 
-        virtual void    sensorChangeValue(sensor_t* sensor, int prev);
-        virtual void    sensorChangeState(sensor_t* sensor,
-                                          const std::string& type,
-                                          sensor_t::state_t prev);
-        virtual void    powerStateChanged(int prev);
-        virtual void    versionBMCChanged(const std::string& prev);
-        virtual void    versionHFWChanged(const std::string& prev);
+  private:
+    // Tools
 
-    private:
-        // Tools
+    bool splitObjectPath(const std::string& path, std::string& name,
+                         std::string& type) const;
+    void getSensorValues(const std::string& object, const std::string& path);
+    void setBMCVersion(const std::string& ver);
+    void setHFWVersion(const std::string& ver);
 
-        bool            splitObjectPath(const std::string& path,
-                                        std::string& name,
-                                        std::string& type) const;
-        void            getSensorValues(const std::string& object,
-                                        const std::string& path);
-        void            setBMCVersion(const std::string& ver);
-        void            setHFWVersion(const std::string& ver);
+    void onSensorsAdded(sdbusplus::message::message& m);
+    void onSensorsRemoved(sdbusplus::message::message& m);
+    void onPropertiesChanged(sensor_t* s, const std::string& type, int scale,
+                             sdbusplus::message::message& m);
+    void onPowerStateChanged(sdbusplus::message::message& m);
 
-        void            onSensorsAdded(sdbusplus::message::message& m);
-        void            onSensorsRemoved(sdbusplus::message::message& m);
-        void            onPropertiesChanged(sensor_t* s,
-                                            const std::string& type,
-                                            int scale,
-                                            sdbusplus::message::message& m);
-        void            onPowerStateChanged(sdbusplus::message::message& m);
+  private:
+    // Member variables
 
-    private:
-        // Member variables
-
-        matches_arr_t m_staticMatches;      //!< Satic match rules.
-        matches_map_t m_sensorsMatches;     //!< Collection of match rules for
-                                            //!  `PropertiesChanged` signals for
-                                            //!  each active sensor
+    matches_arr_t m_staticMatches;  //!< Satic match rules.
+    matches_map_t m_sensorsMatches; //!< Collection of match rules for
+                                    //!  `PropertiesChanged` signals for
+                                    //!  each active sensor
 };

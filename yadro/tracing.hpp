@@ -26,9 +26,8 @@
 #include <net-snmp/net-snmp-includes.h>
 
 #ifdef WITH_TRACING
-#define TRACE(fmt, ...)     snmp_log(LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define TRACE(fmt, ...) snmp_log(LOG_DEBUG, fmt, ##__VA_ARGS__)
 #else
-#define TRACE(...)          ((void)0)
+#define TRACE(...) ((void)0)
 #endif
-#define TRACE_ERROR(fmt, ...)   snmp_log(LOG_ERR,   fmt, ##__VA_ARGS__)
-
+#define TRACE_ERROR(fmt, ...) snmp_log(LOG_ERR, fmt, ##__VA_ARGS__)
