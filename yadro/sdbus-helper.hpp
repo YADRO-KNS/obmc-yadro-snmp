@@ -39,153 +39,119 @@ constexpr auto PROPETIES_IFACE = "org.freedesktop.DBus.Properties";
 
 class helper
 {
-    public:
-        helper(const char* host = nullptr)
-            : m_bus(sdbusplus::bus::open_system(host))
-            , m_running(true)
+  public:
+    helper(const char* host = nullptr) :
+        m_bus(sdbusplus::bus::open_system(host)), m_running(true)
+    {
+    }
+
+    /** @brief Invoke a method. */
+    template <typename... Args>
+    auto callMethod(const std::string& busName, const std::string& path,
+                    const std::string& interface, const std::string& method,
+                    Args&&... args)
+    {
+        auto reqMsg = m_bus.new_method_call(busName.c_str(), path.c_str(),
+                                            interface.c_str(), method.c_str());
+        reqMsg.append(std::forward<Args>(args)...);
+        auto respMsg = m_bus.call(reqMsg);
+
+        if (respMsg.is_method_error())
         {
+            TRACE_ERROR("Failed to invoke DBus method. "
+                        "PATH=%s, INTERFACE=%s, METHOD=%s\n",
+                        path.c_str(), interface.c_str(), method.c_str());
         }
 
-        /** @brief Invoke a method. */
-        template <typename ...Args>
-        auto callMethod(
-                const std::string& busName,
-                const std::string& path,
-                const std::string& interface,
-                const std::string& method,
-                Args&& ... args)
-        {
-            auto reqMsg = m_bus.new_method_call(
-                    busName.c_str(),
-                    path.c_str(),
-                    interface.c_str(),
-                    method.c_str());
-            reqMsg.append(std::forward<Args>(args)...);
-            auto respMsg = m_bus.call(reqMsg);
+        return respMsg;
+    }
 
-            if (respMsg.is_method_error())
+    /** @brief Invoke a method and read the response. */
+    template <typename Ret, typename... Args>
+    auto callMethodAndRead(const std::string& busName, const std::string& path,
+                           const std::string& interface,
+                           const std::string& method, Args&&... args)
+    {
+        sdbusplus::message::message respMsg = callMethod<Args...>(
+            busName, path, interface, method, std::forward<Args>(args)...);
+        Ret resp;
+        respMsg.read(resp);
+        return resp;
+    }
+
+    /** @brief Get subtree from the mapper. */
+    auto getSubTree(const std::string& path, const std::string& interface,
+                    int32_t depth)
+    {
+        using namespace std::literals::string_literals;
+
+        using Path = std::string;
+        using Intf = std::string;
+        using Serv = std::string;
+        using Intfs = std::vector<Intf>;
+        using Objects = std::map<Path, std::map<Serv, Intfs>>;
+        Intfs intfs;
+        if (!interface.empty())
+        {
+            intfs.push_back(interface);
+        }
+
+        auto mapperResp = callMethodAndRead<Objects>(
+            OBJECT_MAPPER_IFACE, OBJECT_MAPPER_PATH, OBJECT_MAPPER_IFACE,
+            "GetSubTree", path, depth, intfs);
+
+        if (mapperResp.empty())
+        {
+            TRACE_ERROR("Empty response from mapper GetSubTree: "
+                        "SUBTREE=%s, INTERFACE=%s, DEPTH=%d\n",
+                        path.c_str(), interface.c_str(), depth);
+        }
+
+        return mapperResp;
+    }
+
+    /** @brief Get a property. */
+    template <typename Property>
+    auto getProperty(const std::string& busName, const std::string& path,
+                     const std::string& interface, const std::string& property)
+    {
+        auto reqMsg = callMethod(busName, path, PROPETIES_IFACE, "Get",
+                                 interface, property);
+        sdbusplus::message::variant<Property> value;
+        reqMsg.read(value);
+        return value.template get<Property>();
+    }
+
+    /** @brief Check if running flag is set. */
+    bool isRunning(void) const
+    {
+        return m_running;
+    }
+
+    /** @brief Terminate loop. */
+    void terminate(void)
+    {
+        m_running = false;
+    }
+
+    /** @brief Start loop and handle deferred DBus calls/signals. */
+    void loop(void)
+    {
+        while (isRunning())
+        {
+            m_bus.process_discard();
+            if (isRunning())
             {
-                TRACE_ERROR("Failed to invoke DBus method. "
-                            "PATH=%s, INTERFACE=%s, METHOD=%s\n",
-                            path.c_str(),
-                            interface.c_str(),
-                            method.c_str());
-            }
-
-            return respMsg;
-        }
-
-        /** @brief Invoke a method and read the response. */
-        template <typename Ret, typename ...Args>
-        auto callMethodAndRead(
-                const std::string& busName,
-                const std::string& path,
-                const std::string& interface,
-                const std::string& method,
-                Args&& ... args)
-        {
-            sdbusplus::message::message respMsg =
-                callMethod<Args...>(
-                        busName,
-                        path,
-                        interface,
-                        method,
-                        std::forward<Args>(args)...);
-            Ret resp;
-            respMsg.read(resp);
-            return resp;
-        }
-
-        /** @brief Get subtree from the mapper. */
-        auto getSubTree(
-                const std::string& path,
-                const std::string& interface,
-                int32_t depth)
-        {
-            using namespace std::literals::string_literals;
-
-            using Path = std::string;
-            using Intf = std::string;
-            using Serv = std::string;
-            using Intfs = std::vector<Intf>;
-            using Objects = std::map<Path, std::map<Serv, Intfs>>;
-            Intfs intfs;
-            if (!interface.empty())
-            {
-                intfs.push_back(interface);
-            }
-
-            auto mapperResp = callMethodAndRead<Objects>(
-                    OBJECT_MAPPER_IFACE,
-                    OBJECT_MAPPER_PATH,
-                    OBJECT_MAPPER_IFACE,
-                    "GetSubTree",
-                    path,
-                    depth,
-                    intfs);
-
-            if (mapperResp.empty())
-            {
-                TRACE_ERROR("Empty response from mapper GetSubTree: "
-                            "SUBTREE=%s, INTERFACE=%s, DEPTH=%d\n",
-                            path.c_str(),
-                            interface.c_str(),
-                            depth);
-            }
-
-            return mapperResp;
-        }
-
-        /** @brief Get a property. */
-        template <typename Property>
-        auto getProperty(
-                const std::string& busName,
-                const std::string& path,
-                const std::string& interface,
-                const std::string& property)
-        {
-            auto reqMsg = callMethod(
-                    busName,
-                    path,
-                    PROPETIES_IFACE,
-                    "Get",
-                    interface,
-                    property);
-            sdbusplus::message::variant<Property> value;
-            reqMsg.read(value);
-            return value.template get<Property>();
-        }
-
-        /** @brief Check if running flag is set. */
-        bool isRunning(void) const
-        {
-            return m_running;
-        }
-
-        /** @brief Terminate loop. */
-        void terminate(void)
-        {
-            m_running = false;
-        }
-
-        /** @brief Start loop and handle deferred DBus calls/signals. */
-        void loop(void)
-        {
-            while (isRunning())
-            {
-                m_bus.process_discard();
-                if (isRunning())
-                {
-                    m_bus.wait(100000 /*microseconds*/);
-                }
+                m_bus.wait(100000 /*microseconds*/);
             }
         }
+    }
 
-    protected:
-        // Member variables
+  protected:
+    // Member variables
 
-        sdbusplus::bus::bus m_bus;      //!< DBus connection
-        volatile bool m_running;        //!< Running flag
+    sdbusplus::bus::bus m_bus; //!< DBus connection
+    volatile bool m_running;   //!< Running flag
 };
 
 } // namespace helper

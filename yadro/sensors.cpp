@@ -90,12 +90,12 @@ sensor_t::state_t sensor_t::enable(bool s)
     return prev;
 }
 
-/**
- * Followed includes should containt a vectors with all possible sensors.
- *
- * TODO: Generate content of followed vectors by yaml files from hwmon
- *       at compile time.
- */
+    /**
+     * Followed includes should containt a vectors with all possible sensors.
+     *
+     * TODO: Generate content of followed vectors by yaml files from hwmon
+     *       at compile time.
+     */
 
 #include "sensors/temperature.hpp"
 #include "sensors/voltage.hpp"
@@ -124,32 +124,34 @@ int hostPowerState = -1;
 /**
  * @brief Returns sensor array reference depends on sensor type
  */
-sensors_arr_t&  getSensorsArr (const std::string & type)
+sensors_arr_t& getSensorsArr(const std::string& type)
 {
-    switch(type[0]){
+    switch (type[0])
+    {
         case 't':
             return temperatureSensors;
-        break;
+            break;
         case 'v':
             return voltageSensors;
-        break;
+            break;
         case 'c':
             return currentSensors;
-        break;
+            break;
         case 'p':
             return powerSensors;
-        break;
+            break;
         default:
             return tachometerSensors;
-        break;
+            break;
     }
 }
 /**
  * @brief Returns sensor scale power depends on sensor type
  */
-int getSensorPower(const std::string & type)
+int getSensorPower(const std::string& type)
 {
-    switch(type[0]){
+    switch (type[0])
+    {
         case 't':
         case 'v':
         case 'c':

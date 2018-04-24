@@ -27,14 +27,13 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 /* column number definitions for sensors table */
-#define COLUMN_YADROSENSOR_NAME         1
-#define COLUMN_YADROSENSOR_VALUE        2
-#define COLUMN_YADROSENSOR_WARNLOW      3
-#define COLUMN_YADROSENSOR_WARNHIGH     4
-#define COLUMN_YADROSENSOR_CRITLOW      5
-#define COLUMN_YADROSENSOR_CRITHIGH     6
-#define COLUMN_YADROSENSOR_STATE        7
+#define COLUMN_YADROSENSOR_NAME 1
+#define COLUMN_YADROSENSOR_VALUE 2
+#define COLUMN_YADROSENSOR_WARNLOW 3
+#define COLUMN_YADROSENSOR_WARNHIGH 4
+#define COLUMN_YADROSENSOR_CRITLOW 5
+#define COLUMN_YADROSENSOR_CRITHIGH 6
+#define COLUMN_YADROSENSOR_STATE 7
 
 void init_yadroTables(void);
 void drop_yadroTables(void);
-

@@ -50,4 +50,3 @@ inline bus open_system(const char* host = nullptr)
 
 } // namespace bus
 } // namespace sdbusplus
-

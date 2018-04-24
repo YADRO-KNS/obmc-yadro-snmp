@@ -29,40 +29,40 @@ struct sensor_t
 {
     enum state_t
     {
-        E_DISABLED      = 0,
-        E_NORMAL        = 1,
-        E_WARNING_LOW   = 2,
-        E_WARNING_HIGH  = 3,
-        E_CRITICAL_LOW  = 4,
+        E_DISABLED = 0,
+        E_NORMAL = 1,
+        E_WARNING_LOW = 2,
+        E_WARNING_HIGH = 3,
+        E_CRITICAL_LOW = 4,
         E_CRITICAL_HIGH = 5,
     };
 
-    bool    operator< (const std::string& s) const;
-    bool    operator< (const sensor_t&    o) const;
+    bool operator<(const std::string& s) const;
+    bool operator<(const sensor_t& o) const;
 
-    bool    isEnabled (void) const;
-    state_t enable    (bool  s = true);
+    bool isEnabled(void) const;
+    state_t enable(bool s = true);
 
-    std::string         name;
-    int                 currentValue;
-    int                 warningLow;
-    int                 warningHigh;
-    int                 criticalLow;
-    int                 criticalHigh;
-    state_t             state;
+    std::string name;
+    int currentValue;
+    int warningLow;
+    int warningHigh;
+    int criticalLow;
+    int criticalHigh;
+    state_t state;
 };
 
 using sensors_arr_t = std::vector<sensor_t>;
 
-extern int                      hostPowerState;
-extern sensors_arr_t            temperatureSensors;
-extern sensors_arr_t            voltageSensors;
-extern sensors_arr_t            tachometerSensors;
-extern sensors_arr_t            currentSensors;
-extern sensors_arr_t            powerSensors;
+extern int hostPowerState;
+extern sensors_arr_t temperatureSensors;
+extern sensors_arr_t voltageSensors;
+extern sensors_arr_t tachometerSensors;
+extern sensors_arr_t currentSensors;
+extern sensors_arr_t powerSensors;
 
 void initialize_sensors(void);
 
-sensors_arr_t&  getSensorsArr       (const std::string & type);
+sensors_arr_t& getSensorsArr(const std::string& type);
 
-int             getSensorPower      (const std::string & type);
+int getSensorPower(const std::string& type);

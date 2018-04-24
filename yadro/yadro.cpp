@@ -35,7 +35,10 @@
 
 static yadrowatcher watcher;
 
-#define YADRO_OID(args...) {1, 3, 6, 1, 5, 1, 49769, ##args}
+#define YADRO_OID(args...)                                                     \
+    {                                                                          \
+        1, 3, 6, 1, 5, 1, 49769, ##args                                        \
+    }
 
 constexpr oid hostPowerState_oid[] = YADRO_OID(1, 1);
 constexpr oid versionBMC_oid[] = YADRO_OID(3, 1, 1);
@@ -46,7 +49,7 @@ constexpr oid versionHFW_oid[] = YADRO_OID(3, 2, 1);
  * the snmpTrapOID.0 object. Here is it's defintion.
  */
 constexpr oid objid_snmptrap_oid[] = {1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0};
-constexpr oid hostPowerStateNotification_oid[]  = YADRO_OID(0, 1);
+constexpr oid hostPowerStateNotification_oid[] = YADRO_OID(0, 1);
 constexpr oid tachSensorStateNotification_oid[] = YADRO_OID(0, 4);
 constexpr oid tempSensorStateNotification_oid[] = YADRO_OID(0, 2);
 constexpr oid voltSensorStateNotification_oid[] = YADRO_OID(0, 3);
@@ -93,9 +96,8 @@ void yadrowatcher::powerStateChanged(int prev)
 {
     dbuswatcher::powerStateChanged(prev);
     sendTrap(hostPowerStateNotification_oid,
-             OID_LENGTH(hostPowerStateNotification_oid),
-             hostPowerState_oid, OID_LENGTH(hostPowerState_oid),
-             hostPowerState);
+             OID_LENGTH(hostPowerStateNotification_oid), hostPowerState_oid,
+             OID_LENGTH(hostPowerState_oid), hostPowerState);
 }
 /**
  * @brief called when state of sensor changed
@@ -109,60 +111,55 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
 {
     dbuswatcher::sensorChangeState(sensor, type, prev);
 
-    char   fieldStr[4096]        = { 0 };
-    oid    fieldOid[MAX_OID_LEN] = { 0 };
-    size_t fieldOidLen           = MAX_OID_LEN;
+    char fieldStr[4096] = {0};
+    oid fieldOid[MAX_OID_LEN] = {0};
+    size_t fieldOidLen = MAX_OID_LEN;
 
     switch (type[0])
     {
         case 't':
             snprintf(fieldStr, sizeof(fieldStr) - 1,
-                     ".1.3.6.1.4.1.49769.1.2.1.7.\"%s\"",
-                     sensor->name.c_str());
+                     ".1.3.6.1.4.1.49769.1.2.1.7.\"%s\"", sensor->name.c_str());
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(tempSensorStateNotification_oid,
-                     OID_LENGTH(tempSensorStateNotification_oid),
-                     fieldOid, fieldOidLen, sensor->state);
+                     OID_LENGTH(tempSensorStateNotification_oid), fieldOid,
+                     fieldOidLen, sensor->state);
             break;
 
         case 'v':
             snprintf(fieldStr, sizeof(fieldStr) - 1,
-                     ".1.3.6.1.4.1.49769.1.3.1.7.\"%s\"",
-                     sensor->name.c_str());
+                     ".1.3.6.1.4.1.49769.1.3.1.7.\"%s\"", sensor->name.c_str());
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(voltSensorStateNotification_oid,
-                     OID_LENGTH(voltSensorStateNotification_oid),
-                     fieldOid, fieldOidLen, sensor->state);
+                     OID_LENGTH(voltSensorStateNotification_oid), fieldOid,
+                     fieldOidLen, sensor->state);
             break;
 
         case 'f':
             snprintf(fieldStr, sizeof(fieldStr) - 1,
-                     ".1.3.6.1.4.1.49769.1.4.1.7.\"%s\"",
-                     sensor->name.c_str());
+                     ".1.3.6.1.4.1.49769.1.4.1.7.\"%s\"", sensor->name.c_str());
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(tachSensorStateNotification_oid,
-                     OID_LENGTH(tachSensorStateNotification_oid),
-                     fieldOid, fieldOidLen, sensor->state);
+                     OID_LENGTH(tachSensorStateNotification_oid), fieldOid,
+                     fieldOidLen, sensor->state);
             break;
 
         case 'c':
             snprintf(fieldStr, sizeof(fieldStr) - 1,
-                     ".1.3.6.1.4.1.49769.1.5.1.7.\"%s\"",
-                     sensor->name.c_str());
+                     ".1.3.6.1.4.1.49769.1.5.1.7.\"%s\"", sensor->name.c_str());
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(currSensorStateNotification_oid,
-                     OID_LENGTH(currSensorStateNotification_oid),
-                     fieldOid, fieldOidLen, sensor->state);
+                     OID_LENGTH(currSensorStateNotification_oid), fieldOid,
+                     fieldOidLen, sensor->state);
             break;
 
         case 'p':
             snprintf(fieldStr, sizeof(fieldStr) - 1,
-                     ".1.3.6.1.4.1.49769.1.6.1.7.\"%s\"",
-                     sensor->name.c_str());
+                     ".1.3.6.1.4.1.49769.1.6.1.7.\"%s\"", sensor->name.c_str());
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(powerSensorStateNotification_oid,
-                     OID_LENGTH(powerSensorStateNotification_oid),
-                     fieldOid, fieldOidLen, sensor->state);
+                     OID_LENGTH(powerSensorStateNotification_oid), fieldOid,
+                     fieldOidLen, sensor->state);
             break;
 
         default:
@@ -190,7 +187,8 @@ void yadrowatcher::sendTrap(const oid* trap_oid, size_t trap_oid_len,
      */
     snmp_varlist_add_variable(&notification_vars,
                               /* the snmpTrapOID.0 variable */
-                              objid_snmptrap_oid, OID_LENGTH(objid_snmptrap_oid),
+                              objid_snmptrap_oid,
+                              OID_LENGTH(objid_snmptrap_oid),
                               /* value type is an OID */
                               ASN_OBJECT_ID,
                               /* value contents is our notification OID */
@@ -199,10 +197,9 @@ void yadrowatcher::sendTrap(const oid* trap_oid, size_t trap_oid_len,
                               trap_oid_len * sizeof(oid));
 
     /* add addtional objects defined as part of the trap */
-    snmp_varlist_add_variable(&notification_vars,
-                              field_oid, field_oid_len, ASN_INTEGER,
-                              reinterpret_cast<u_char*>(&field_value),
-                              sizeof(field_value));
+    snmp_varlist_add_variable(
+        &notification_vars, field_oid, field_oid_len, ASN_INTEGER,
+        reinterpret_cast<u_char*>(&field_value), sizeof(field_value));
 
     DEBUGMSGTL(("yadro:notification", "sending trap\n"));
     send_v2trap(notification_vars);
@@ -220,19 +217,17 @@ void yadrowatcher::sendTrap(const oid* trap_oid, size_t trap_oid_len,
  * @param str_len     - Actual string length
  * @param max_str_len - Max string length
  */
-void init_yadro_string(const char *name, const oid *str_oid, size_t str_oid_len,
-                       char *str, size_t str_len, size_t max_str_len)
+void init_yadro_string(const char* name, const oid* str_oid, size_t str_oid_len,
+                       char* str, size_t str_len, size_t max_str_len)
 {
     DEBUGMSGTL(("yadro:init", "Initialize %s variable\n", name));
 
     netsnmp_handler_registration* reg = netsnmp_create_handler_registration(
-                                            name, nullptr, str_oid, str_oid_len,
-                                            HANDLER_CAN_RONLY);
+        name, nullptr, str_oid, str_oid_len, HANDLER_CAN_RONLY);
 
-    netsnmp_watcher_info *info = SNMP_MALLOC_TYPEDEF(netsnmp_watcher_info);
-    netsnmp_init_watcher_info6(info, str, str_len,
-                               ASN_OCTET_STR, WATCHER_MAX_SIZE,
-                               max_str_len, nullptr);
+    netsnmp_watcher_info* info = SNMP_MALLOC_TYPEDEF(netsnmp_watcher_info);
+    netsnmp_init_watcher_info6(info, str, str_len, ASN_OCTET_STR,
+                               WATCHER_MAX_SIZE, max_str_len, nullptr);
 
     netsnmp_register_watched_instance2(reg, info);
 
@@ -241,54 +236,53 @@ void init_yadro_string(const char *name, const oid *str_oid, size_t str_oid_len,
 
 extern "C" {
 
-    /**
-     * Initializes the yadro module
-     */
-    void init_yadro(void)
-    {
-        DEBUGMSGTL(("yadro:init", "initialize plugin\n"));
+/**
+ * Initializes the yadro module
+ */
+void init_yadro(void)
+{
+    DEBUGMSGTL(("yadro:init", "initialize plugin\n"));
 
-        initialize_sensors();
+    initialize_sensors();
 
-        DEBUGMSGTL(("yadro:init", "initialize hostPowerState field\n"));
-        netsnmp_register_int_instance("yadroHostPowerState",
-                                      hostPowerState_oid,
-                                      OID_LENGTH(hostPowerState_oid),
-                                      &hostPowerState, nullptr);
+    DEBUGMSGTL(("yadro:init", "initialize hostPowerState field\n"));
+    netsnmp_register_int_instance("yadroHostPowerState", hostPowerState_oid,
+                                  OID_LENGTH(hostPowerState_oid),
+                                  &hostPowerState, nullptr);
 
-        init_yadro_string("yadroSoftwareBMCVersion",
-                          versionBMC_oid, OID_LENGTH(versionBMC_oid),
-                          versionBMC, strlen(versionBMC), VERSION_MAX_LEN);
+    init_yadro_string("yadroSoftwareBMCVersion", versionBMC_oid,
+                      OID_LENGTH(versionBMC_oid), versionBMC,
+                      strlen(versionBMC), VERSION_MAX_LEN);
 
-        init_yadro_string("yadroSoftwareHFWVersion",
-                          versionHFW_oid, OID_LENGTH(versionHFW_oid),
-                          versionHFW, strlen(versionHFW), VERSION_MAX_LEN);
+    init_yadro_string("yadroSoftwareHFWVersion", versionHFW_oid,
+                      OID_LENGTH(versionHFW_oid), versionHFW,
+                      strlen(versionHFW), VERSION_MAX_LEN);
 
-        /* here we initialize all the tables we're planning on supporting */
-        init_yadroTables();
+    /* here we initialize all the tables we're planning on supporting */
+    init_yadroTables();
 
-        watcher.start();
+    watcher.start();
 
-        DEBUGMSGTL(("yadro:init", "done initializing plugin.\n"));
-    }
+    DEBUGMSGTL(("yadro:init", "done initializing plugin.\n"));
+}
 
-    /**
-     * Deinitialize the yadro module
-     */
-    void shutdown_yadro(void)
-    {
-        DEBUGMSGTL(("yadro:shutdown", "destroy plugin.\n"));
+/**
+ * Deinitialize the yadro module
+ */
+void shutdown_yadro(void)
+{
+    DEBUGMSGTL(("yadro:shutdown", "destroy plugin.\n"));
 
-        watcher.stop();
+    watcher.stop();
 
-        /* Unregister our objects */
-        drop_yadroTables();
+    /* Unregister our objects */
+    drop_yadroTables();
 
-        unregister_mib((oid*)hostPowerState_oid, OID_LENGTH(hostPowerState_oid));
-        unregister_mib((oid*)versionBMC_oid, OID_LENGTH(versionBMC_oid));
-        unregister_mib((oid*)versionHFW_oid, OID_LENGTH(versionHFW_oid));
+    unregister_mib((oid*)hostPowerState_oid, OID_LENGTH(hostPowerState_oid));
+    unregister_mib((oid*)versionBMC_oid, OID_LENGTH(versionBMC_oid));
+    unregister_mib((oid*)versionHFW_oid, OID_LENGTH(versionHFW_oid));
 
-        DEBUGMSGTL(("yadro:shutdown", "done destroing plugin.\n"));
-    }
+    DEBUGMSGTL(("yadro:shutdown", "done destroing plugin.\n"));
+}
 
 } // extern "C"

@@ -1,5 +1,6 @@
 /**
- * Compile: c++ -DTEST -lsdbusplus -lsystem sensors.cpp watcher.cpp watcher-test.cpp -o watcher
+ * Compile: c++ -DTEST -lsdbusplus -lsystem sensors.cpp watcher.cpp \
+ *          watcher-test.cpp -o watcher
  */
 #include <sensors.hpp>
 #include <watcher.hpp>

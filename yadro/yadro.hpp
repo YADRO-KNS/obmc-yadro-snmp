@@ -28,29 +28,23 @@
 
 class yadrowatcher : public dbuswatcher
 {
-    public:
+  public:
+    yadrowatcher(void);
+    virtual ~yadrowatcher(void);
 
-        yadrowatcher(void);
-        virtual ~yadrowatcher(void);
+    void start(void);
+    void stop(void);
 
-        void start(void);
-        void stop(void);
+  protected:
+    void powerStateChanged(int prev) override;
+    void sensorChangeState(sensor_t* sensor, const std::string& type,
+                           sensor_t::state_t prev) override;
 
-    protected:
+    void sendTrap(const oid* trap_oid, size_t trap_oid_len,
+                  const oid* field_oid, size_t field_oid_len, int field_value);
 
-        void powerStateChanged(int prev) override;
-        void sensorChangeState(sensor_t* sensor,
-                               const std::string& type,
-                               sensor_t::state_t prev) override;
-
-        void sendTrap(const oid* trap_oid,
-                      size_t trap_oid_len,
-                      const oid* field_oid,
-                      size_t field_oid_len,
-                      int field_value);
-    private:
-
-        std::thread     m_thread;
+  private:
+    std::thread m_thread;
 };
 
 #ifdef __cplusplus
@@ -58,10 +52,9 @@ extern "C" {
 #endif
 
 /* function declarations */
-void  init_yadro(void);
-void  shutdown_yadro(void);
+void init_yadro(void);
+void shutdown_yadro(void);
 
 #ifdef __cplusplus
 }
 #endif
-
