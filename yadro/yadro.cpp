@@ -37,7 +37,7 @@ static yadrowatcher watcher;
 
 #define YADRO_OID(args...)                                                     \
     {                                                                          \
-        1, 3, 6, 1, 5, 1, 49769, ##args                                        \
+        1, 3, 6, 1, 4, 1, 49769, ##args                                        \
     }
 
 constexpr oid hostPowerState_oid[] = YADRO_OID(1, 1);
