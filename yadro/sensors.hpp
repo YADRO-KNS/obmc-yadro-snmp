@@ -41,7 +41,9 @@ struct sensor_t
     bool operator<(const sensor_t& o) const;
 
     bool isEnabled(void) const;
-    state_t enable(bool s = true);
+
+    state_t getState(void) const;
+    state_t setState(state_t newState, bool value = true);
 
     std::string name;
     int currentValue;
@@ -49,7 +51,7 @@ struct sensor_t
     int warningHigh;
     int criticalLow;
     int criticalHigh;
-    state_t state;
+    uint8_t mask;
 };
 
 using sensors_arr_t = std::vector<sensor_t>;

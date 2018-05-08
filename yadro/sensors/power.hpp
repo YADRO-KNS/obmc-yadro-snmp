@@ -4,8 +4,8 @@
  * at compile time by yaml files from hwmon project.
  */
 sensors_arr_t powerSensors = {{
-    {"PSU0_PIN", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU0_POUT", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU1_PIN", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU1_POUT", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
+    SENSOR_ENTRY("PSU0_PIN"),
+    SENSOR_ENTRY("PSU0_POUT"),
+    SENSOR_ENTRY("PSU1_PIN"),
+    SENSOR_ENTRY("PSU1_POUT"),
 }};

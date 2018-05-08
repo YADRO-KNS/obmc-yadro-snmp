@@ -162,8 +162,8 @@ int yadroSensorsTable_handler(netsnmp_mib_handler* /*handler*/,
                                                       SNMP_NOSUCHINSTANCE);
                             continue;
                         }
-                        snmp_set_var_typed_integer(request->requestvb,
-                                                   ASN_INTEGER, entry->state);
+                        snmp_set_var_typed_integer(
+                            request->requestvb, ASN_INTEGER, entry->getState());
                         break;
 
                     default:
