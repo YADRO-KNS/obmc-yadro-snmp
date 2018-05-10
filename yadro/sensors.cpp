@@ -22,6 +22,7 @@
 
 #include "sensors.hpp"
 #include <algorithm>
+#include <climits>
 
 /**
  * Operator for binary search (using std::lower_bound) sensor by name
@@ -45,48 +46,66 @@ bool sensor_t::operator<(const sensor_t& o) const
  */
 bool sensor_t::isEnabled(void) const
 {
-    return state > E_DISABLED;
+    return mask > E_DISABLED;
 }
+
 /**
- * @brief Change active/disabled state
+ * @brief Get current sensor state.
  *
- * @param s - true if required active state, false otherwise
+ * @return Current sensor state
  */
-sensor_t::state_t sensor_t::enable(bool s)
+sensor_t::state_t sensor_t::getState(void) const
 {
-    /* Do nothing if sensor already in required state */
-    if (s == isEnabled())
+    if (mask & (1 << E_CRITICAL_HIGH))
     {
-        return state;
+        return E_CRITICAL_HIGH;
+    }
+    else if (mask & (1 << E_WARNING_HIGH))
+    {
+        return E_WARNING_HIGH;
+    }
+    else if (mask & (1 << E_WARNING_LOW))
+    {
+        return E_WARNING_LOW;
+    }
+    else if (mask & (1 << E_CRITICAL_LOW))
+    {
+        return E_CRITICAL_LOW;
+    }
+    else if (mask & (1 << E_NORMAL))
+    {
+        return E_NORMAL;
     }
 
-    auto prev = state;
+    return E_DISABLED;
+}
 
-    if (!s)
+/**
+ * @brief Set new sensor state
+ *
+ * @param newState - New sensor state
+ * @param value - Switch on or off this state
+ *
+ * @return Previous sensor state
+ */
+sensor_t::state_t sensor_t::setState(sensor_t::state_t newState, bool value)
+{
+    auto prev = getState();
+    if (newState > E_DISABLED)
     {
-        state = E_DISABLED;
-    }
-    else if (criticalHigh > 0 && currentValue > criticalHigh)
-    {
-        state = E_CRITICAL_HIGH;
-    }
-    else if (criticalLow > 0 && currentValue > criticalLow)
-    {
-        state = E_CRITICAL_LOW;
-    }
-    else if (warningHigh > 0 && currentValue > warningHigh)
-    {
-        state = E_WARNING_HIGH;
-    }
-    else if (warningLow > 0 && currentValue > warningLow)
-    {
-        state = E_WARNING_LOW;
+        if (value)
+        {
+            mask |= (1 << newState);
+        }
+        else
+        {
+            mask &= ~(1 << newState);
+        }
     }
     else
     {
-        state = E_NORMAL;
+        mask = E_DISABLED;
     }
-
     return prev;
 }
 
@@ -96,6 +115,11 @@ sensor_t::state_t sensor_t::enable(bool s)
      * TODO: Generate content of followed vectors by yaml files from hwmon
      *       at compile time.
      */
+
+#define SENSOR_ENTRY(name)                                                     \
+    {                                                                          \
+        name, 0, INT_MIN, INT_MAX, INT_MIN, INT_MAX, sensor_t::E_DISABLED      \
+    }
 
 #include "sensors/temperature.hpp"
 #include "sensors/voltage.hpp"

@@ -4,13 +4,13 @@
  * at compile time by yaml files from hwmon project.
  */
 sensors_arr_t tachometerSensors = {{
-    {"FAN_TACH0", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"FAN_TACH1", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"FAN_TACH2", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"FAN_TACH3", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"FAN_TACH4", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU0_FAN_TACH1", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU0_FAN_TACH2", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU1_FAN_TACH1", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
-    {"PSU1_FAN_TACH2", 0, 0, 0, 0, 0, sensor_t::E_DISABLED},
+    SENSOR_ENTRY("FAN_TACH0"),
+    SENSOR_ENTRY("FAN_TACH1"),
+    SENSOR_ENTRY("FAN_TACH2"),
+    SENSOR_ENTRY("FAN_TACH3"),
+    SENSOR_ENTRY("FAN_TACH4"),
+    SENSOR_ENTRY("PSU0_FAN_TACH1"),
+    SENSOR_ENTRY("PSU0_FAN_TACH2"),
+    SENSOR_ENTRY("PSU1_FAN_TACH1"),
+    SENSOR_ENTRY("PSU1_FAN_TACH2"),
 }};

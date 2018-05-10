@@ -611,7 +611,7 @@ yadroPwrSensorStateNotification NOTIFICATION-TYPE
 --
 
 yadroSoftwareBMCVersion OBJECT-TYPE
-    SYNTAX      DisplayString (SIZE(1..32))
+    SYNTAX      DisplayString (SIZE(1..64))
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
@@ -619,7 +619,7 @@ yadroSoftwareBMCVersion OBJECT-TYPE
     ::= { yadroSoftwareBMC 1 }
 
 yadroSoftwareHFWVersion OBJECT-TYPE
-    SYNTAX      DisplayString (SIZE(1..32))
+    SYNTAX      DisplayString (SIZE(1..64))
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION

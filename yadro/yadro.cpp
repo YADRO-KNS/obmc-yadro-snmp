@@ -37,7 +37,7 @@ static yadrowatcher watcher;
 
 #define YADRO_OID(args...)                                                     \
     {                                                                          \
-        1, 3, 6, 1, 5, 1, 49769, ##args                                        \
+        1, 3, 6, 1, 4, 1, 49769, ##args                                        \
     }
 
 constexpr oid hostPowerState_oid[] = YADRO_OID(1, 1);
@@ -123,7 +123,7 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(tempSensorStateNotification_oid,
                      OID_LENGTH(tempSensorStateNotification_oid), fieldOid,
-                     fieldOidLen, sensor->state);
+                     fieldOidLen, sensor->getState());
             break;
 
         case 'v':
@@ -132,7 +132,7 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(voltSensorStateNotification_oid,
                      OID_LENGTH(voltSensorStateNotification_oid), fieldOid,
-                     fieldOidLen, sensor->state);
+                     fieldOidLen, sensor->getState());
             break;
 
         case 'f':
@@ -141,7 +141,7 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(tachSensorStateNotification_oid,
                      OID_LENGTH(tachSensorStateNotification_oid), fieldOid,
-                     fieldOidLen, sensor->state);
+                     fieldOidLen, sensor->getState());
             break;
 
         case 'c':
@@ -150,7 +150,7 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(currSensorStateNotification_oid,
                      OID_LENGTH(currSensorStateNotification_oid), fieldOid,
-                     fieldOidLen, sensor->state);
+                     fieldOidLen, sensor->getState());
             break;
 
         case 'p':
@@ -159,7 +159,7 @@ void yadrowatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
             read_objid(fieldStr, fieldOid, &fieldOidLen);
             sendTrap(powerSensorStateNotification_oid,
                      OID_LENGTH(powerSensorStateNotification_oid), fieldOid,
-                     fieldOidLen, sensor->state);
+                     fieldOidLen, sensor->getState());
             break;
 
         default:
@@ -179,7 +179,7 @@ void yadrowatcher::sendTrap(const oid* trap_oid, size_t trap_oid_len,
                             const oid* field_oid, size_t field_oid_len,
                             int field_value)
 {
-    DEBUGMSGTL(("yadro:notification", "initialize powerState notification\n"));
+    DEBUGMSGTL(("yadro:notification", "initialize notification\n"));
 
     netsnmp_variable_list* notification_vars = nullptr;
     /*

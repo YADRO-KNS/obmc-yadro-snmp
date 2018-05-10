@@ -90,8 +90,7 @@ void dbuswatcher::updateSensors(void)
                 auto sit = std::lower_bound(arr.begin(), arr.end(), name);
                 if (sit != arr.end() && name == sit->name)
                 {
-                    auto prev = sensor_t::E_DISABLED;
-                    std::swap(sit->state, prev);
+                    auto prev = sit->setState(sensor_t::E_DISABLED);
                     if (prev != sensor_t::E_DISABLED)
                     {
                         sensorChangeState(&(*sit), type, prev);
@@ -219,8 +218,8 @@ void dbuswatcher::run(void)
  */
 void dbuswatcher::sensorChangeValue(sensor_t* sensor, int prev)
 {
-    TRACE("Sensor '%s' [%d] change value: %d -> %d\n", sensor->name.c_str(),
-          sensor->state, prev, sensor->currentValue);
+    TRACE("Sensor '%s' [%08X] change value: %d -> %d\n", sensor->name.c_str(),
+          sensor->mask, prev, sensor->currentValue);
 }
 /**
  * @brief Called when state of sensor changed
@@ -233,15 +232,16 @@ void dbuswatcher::sensorChangeState(sensor_t* sensor, const std::string& type,
 {
     if (prev == sensor_t::E_DISABLED)
     {
-        TRACE("Activate %s sensor '%s': {%d, %d, %d, %d, %d} state: %d\n",
+        TRACE("Activate %s sensor '%s': {%d, %d, %d, %d, %d} mask: %08X\n",
               type.c_str(), sensor->name.c_str(), sensor->currentValue,
               sensor->warningLow, sensor->warningHigh, sensor->criticalLow,
-              sensor->criticalHigh, sensor->state);
+              sensor->criticalHigh, sensor->mask);
     }
     else
     {
-        TRACE("%s sensor '%s' change state: %d -> %d\n", type.c_str(),
-              sensor->name.c_str(), prev, sensor->state);
+        TRACE("%s sensor '%s' change state: %d -> %d (mask: %08X)\n",
+              type.c_str(), sensor->name.c_str(), prev, sensor->getState(),
+              sensor->mask);
     }
 }
 /**
@@ -316,7 +316,7 @@ void dbuswatcher::getSensorValues(const std::string& object,
                                   const std::string& path)
 {
     using sensors_values_t =
-        std::map<std::string, sdbusplus::message::variant<int64_t>>;
+        std::map<std::string, sdbusplus::message::variant<int64_t, bool>>;
 
     std::string name, type;
     if (!splitObjectPath(path, name, type))
@@ -376,8 +376,33 @@ void dbuswatcher::getSensorValues(const std::string& object,
                               type, scale, std::placeholders::_1)));
         }
 
-        auto prev = it->enable(true);
-        if (prev != it->state)
+        auto prev = it->setState(sensor_t::E_NORMAL);
+
+        if (d.count("WarningAlarmLow"))
+        {
+            it->setState(sensor_t::E_WARNING_LOW,
+                         d["WarningAlarmLow"].get<bool>());
+        }
+
+        if (d.count("WarningAlarmHigh"))
+        {
+            it->setState(sensor_t::E_WARNING_HIGH,
+                         d["WarningAlarmHigh"].get<bool>());
+        }
+
+        if (d.count("CriticalAlarmLow"))
+        {
+            it->setState(sensor_t::E_CRITICAL_LOW,
+                         d["CriticalAlarmLow"].get<bool>());
+        }
+
+        if (d.count("CriticalAlarmHigh"))
+        {
+            it->setState(sensor_t::E_CRITICAL_HIGH,
+                         d["CriticalAlarmHigh"].get<bool>());
+        }
+
+        if (prev != it->getState())
         {
             sensorChangeState(&(*it), type, prev);
         }
@@ -411,6 +436,7 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
         if (it != arr.end() && it->name == name)
         {
             int power = getSensorPower(type);
+            auto prev = it->setState(sensor_t::E_NORMAL);
 
             if (data.count(SENSOR_VALUE) && data[SENSOR_VALUE].count("Scale"))
             {
@@ -440,6 +466,20 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
                         scale *
                         data[SENSOR_CRITICAL]["CriticalLow"].get<int64_t>();
                 }
+
+                if (data[SENSOR_CRITICAL].count("CriticalAlarmHigh"))
+                {
+                    it->setState(
+                        sensor_t::E_CRITICAL_HIGH,
+                        data[SENSOR_CRITICAL]["CriticalAlarmHigh"].get<bool>());
+                }
+
+                if (data[SENSOR_CRITICAL].count("CriticalAlarmLow"))
+                {
+                    it->setState(
+                        sensor_t::E_CRITICAL_LOW,
+                        data[SENSOR_CRITICAL]["CriticalAlarmLow"].get<bool>());
+                }
             }
 
             if (data.count(SENSOR_WARNING))
@@ -457,6 +497,20 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
                         scale *
                         data[SENSOR_WARNING]["WarningLow"].get<int64_t>();
                 }
+
+                if (data[SENSOR_WARNING].count("WarningAlarmHigh"))
+                {
+                    it->setState(
+                        sensor_t::E_WARNING_HIGH,
+                        data[SENSOR_WARNING]["WarningAlarmHigh"].get<bool>());
+                }
+
+                if (data[SENSOR_WARNING].count("WarningAlarmLow"))
+                {
+                    it->setState(
+                        sensor_t::E_WARNING_LOW,
+                        data[SENSOR_WARNING]["WarningAlarmLow"].get<bool>());
+                }
             }
 
             if (0 == m_sensorsMatches.count(path.str))
@@ -471,8 +525,7 @@ void dbuswatcher::onSensorsAdded(sdbusplus::message::message& m)
                                   &(*it), type, scale, std::placeholders::_1)));
             }
 
-            auto prev = it->enable(true);
-            if (prev != it->state)
+            if (prev != it->getState())
             {
                 sensorChangeState(&(*it), type, prev);
             }
@@ -508,8 +561,8 @@ void dbuswatcher::onSensorsRemoved(sdbusplus::message::message& m)
         if (it != arr.end() && it->name == name)
         {
             m_sensorsMatches.erase(path.str);
-            auto prev = it->enable(false);
-            if (prev != it->state)
+            auto prev = it->setState(sensor_t::E_DISABLED);
+            if (prev != it->getState())
             {
                 sensorChangeState(&(*it), type, prev);
             }
@@ -553,18 +606,14 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
     {
         if (data.count("WarningAlarmHigh"))
         {
-            auto value =
-                (data["WarningAlarmHigh"].get<bool>() ? sensor_t::E_WARNING_HIGH
-                                                      : sensor_t::E_NORMAL);
-            std::swap(s->state, value);
+            auto value = s->setState(sensor_t::E_WARNING_HIGH,
+                                     data["WarningAlarmHigh"].get<bool>());
             sensorChangeState(s, type, value);
         }
         else if (data.count("WarningAlarmLow"))
         {
-            auto value =
-                (data["WarningAlarmLow"].get<bool>() ? sensor_t::E_WARNING_LOW
-                                                     : sensor_t::E_NORMAL);
-            std::swap(s->state, value);
+            auto value = s->setState(sensor_t::E_WARNING_LOW,
+                                     data["WarningAlarmLow"].get<bool>());
             sensorChangeState(s, type, value);
         }
     }
@@ -572,18 +621,14 @@ void dbuswatcher::onPropertiesChanged(sensor_t* s, const std::string& type,
     {
         if (data.count("CriticalAlarmHigh"))
         {
-            auto value = (data["CriticalAlarmHigh"].get<bool>()
-                              ? sensor_t::E_CRITICAL_HIGH
-                              : sensor_t::E_NORMAL);
-            std::swap(s->state, value);
+            auto value = s->setState(sensor_t::E_CRITICAL_HIGH,
+                                     data["CriticalAlarmHigh"].get<bool>());
             sensorChangeState(s, type, value);
         }
         else if (data.count("CriticalAlarmLow"))
         {
-            auto value =
-                (data["CriticalAlarmLow"].get<bool>() ? sensor_t::E_CRITICAL_LOW
-                                                      : sensor_t::E_NORMAL);
-            std::swap(s->state, value);
+            auto value = s->setState(sensor_t::E_CRITICAL_LOW,
+                                     data["CriticalAlarmLow"].get<bool>());
             sensorChangeState(s, type, value);
         }
     }
