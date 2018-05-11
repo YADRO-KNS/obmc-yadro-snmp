@@ -62,7 +62,6 @@ AC_DEFINE_UNQUOTED([SNMP_PASSWORD], ["$SNMP_PASSWORD"], [SNMPv3 password.])
 # Create configured output
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile \
-                 yadro/Makefile \
                  agent/Makefile \
                  snmpcfg/Makefile \
                  mibs/Makefile \
