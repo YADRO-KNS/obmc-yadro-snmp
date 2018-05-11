@@ -4,7 +4,7 @@ IMPORTS
     MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
     Integer32, enterprises
         FROM SNMPv2-SMI
-    TEXTUAL-CONVENTION, DisplayString
+    TEXTUAL-CONVENTION
         FROM SNMPv2-TC
     MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
         FROM SNMPv2-CONF
@@ -38,11 +38,8 @@ yadro MODULE-IDENTITY
 yadroNotifications      OBJECT IDENTIFIER ::= { yadro 0 }
 yadroSensors            OBJECT IDENTIFIER ::= { yadro 1 }
 yadroConformance        OBJECT IDENTIFIER ::= { yadro 2 }
-yadroSoftware           OBJECT IDENTIFIER ::= { yadro 3 }
 yadroCompliances        OBJECT IDENTIFIER ::= { yadroConformance 1 }
 yadroGroups             OBJECT IDENTIFIER ::= { yadroConformance 2 }
-yadroSoftwareBMC        OBJECT IDENTIFIER ::= { yadroSoftware 1 }
-yadroSoftwareHFW        OBJECT IDENTIFIER ::= { yadroSoftware 2 }
 
 --
 
@@ -565,6 +562,73 @@ yadroPowerSensorState OBJECT-TYPE
     ::= { yadroPowerSensorsEntry 7 }
 
 --
+yadroSoftwareTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF YADROSoftwareEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of existing firmware images."
+    ::= { yadro 3 }
+
+yadroSoftwareEntry OBJECT-TYPE
+    SYNTAX      YADROSoftwareEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An entry containing a firmware images details."
+    INDEX       { yadroSoftwareHash }
+    ::= { yadroSoftwareTable 1 }
+
+YADROSoftwareEntry ::= SEQUENCE {
+    yadroSoftwareHash       OCTET STRING,
+    yadroSoftwareVersion    OCTET STRING,
+    yadroSoftwarePurpose    Integer32,
+    yadroSoftwareActivation Integer32,
+    yadroSoftwarePriority   Integer32
+}
+
+yadroSoftwareHash OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..8))
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The software hash represent as string."
+    ::= { yadroSoftwareEntry 1 }
+
+yadroSoftwareVersion OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The software version."
+    ::= { yadroSoftwareEntry 2 }
+
+yadroSoftwarePurpose OBJECT-TYPE
+    SYNTAX      INTEGER { unknown(0), other(1), system(2), bmc(3), host(4) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The software version purpose."
+    ::= { yadroSoftwareEntry 3 }
+
+yadroSoftwareActivation OBJECT-TYPE
+    SYNTAX      INTEGER { notReady(0), invalid(1), ready(2),
+                          activating(3), active(4), failed(5) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The current activation state of the software."
+    ::= { yadroSoftwareEntry 4 }
+
+yadroSoftwarePriority OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The piority, for redundancy purposes, of the associated software."
+    ::= { yadroSoftwareEntry 5 }
+
+--
 
 yadroHostPowerStateNotification NOTIFICATION-TYPE
     OBJECTS     { yadroHostPowerState }
@@ -610,24 +674,6 @@ yadroPwrSensorStateNotification NOTIFICATION-TYPE
 
 --
 
-yadroSoftwareBMCVersion OBJECT-TYPE
-    SYNTAX      DisplayString (SIZE(1..64))
-    MAX-ACCESS  read-only
-    STATUS      current
-    DESCRIPTION
-        "BMC Firmware version"
-    ::= { yadroSoftwareBMC 1 }
-
-yadroSoftwareHFWVersion OBJECT-TYPE
-    SYNTAX      DisplayString (SIZE(1..64))
-    MAX-ACCESS  read-only
-    STATUS      current
-    DESCRIPTION
-        "Host firmware version"
-    ::= { yadroSoftwareHFW 1 }
-
---
-
 yadroCommpliance MODULE-COMPLIANCE
     STATUS      current
     DESCRIPTION
@@ -639,7 +685,8 @@ yadroCommpliance MODULE-COMPLIANCE
                        yadroVoltSensorsTableGroup,
                        yadroTachSensorsTableGroup,
                        yadroCurrSensorsTableGroup,
-                       yadroPowerSensorsTableGroup
+                       yadroPowerSensorsTableGroup,
+                       yadroSoftwareTableGroup
                      }
     ::= { yadroCompliances 1 }
 
@@ -657,10 +704,7 @@ yadroNotificationsGroup NOTIFICATION-GROUP
     ::= { yadroGroups 10 }
 
 yadroScalarFieldsGroup OBJECT-GROUP
-    OBJECTS     { yadroHostPowerState,
-                  yadroSoftwareBMCVersion,
-                  yadroSoftwareHFWVersion
-                }
+    OBJECTS     { yadroHostPowerState }
     STATUS      current
     DESCRIPTION
         "A collection of scalar fields"
@@ -735,5 +779,17 @@ yadroPowerSensorsTableGroup OBJECT-GROUP
         "A collection of objects providing information
         about power sensors."
     ::= { yadroGroups 6 }
+
+yadroSoftwareTableGroup OBJECT-GROUP
+    OBJECTS     { yadroSoftwareVersion,
+                  yadroSoftwarePurpose,
+                  yadroSoftwareActivation,
+                  yadroSoftwarePriority
+                }
+    STATUS      current
+    DESCRIPTION
+        "A collection for objects providing information
+        about existing software."
+    ::= { yadroGroups 7 }
 
 END
