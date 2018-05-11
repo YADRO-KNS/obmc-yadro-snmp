@@ -1,2 +1,2 @@
-SUBDIRS = yadro agent snmpcfg mibs conf
+SUBDIRS = agent snmpcfg mibs conf
 
