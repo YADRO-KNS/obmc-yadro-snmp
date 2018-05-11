@@ -22,12 +22,13 @@
 
 #include "yadro_sensorstables.hpp"
 #include "sensors.hpp"
+#include "yadro_oid.hpp"
 
-constexpr oid yadroTachSensorsTable_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 4};
-constexpr oid yadroTempSensorsTable_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 2};
-constexpr oid yadroVoltSensorsTable_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 3};
-constexpr oid yadroPowerSensorsTable_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 6};
-constexpr oid yadroCurrSensorsTable_oid[] = {1, 3, 6, 1, 4, 1, 49769, 1, 5};
+constexpr oid yadroTachSensorsTable_oid[] = YADRO_OID(1, 4);
+constexpr oid yadroTempSensorsTable_oid[] = YADRO_OID(1, 2);
+constexpr oid yadroVoltSensorsTable_oid[] = YADRO_OID(1, 3);
+constexpr oid yadroPowerSensorsTable_oid[] = YADRO_OID(1, 6);
+constexpr oid yadroCurrSensorsTable_oid[] = YADRO_OID(1, 5);
 /**
  * @brief Iterator hook routines
  *
