@@ -32,13 +32,9 @@
 #include "sensors.hpp"
 #include "versions.hpp"
 #include "watcher.hpp"
+#include "yadro_oid.hpp"
 
 static yadrowatcher watcher;
-
-#define YADRO_OID(args...)                                                     \
-    {                                                                          \
-        1, 3, 6, 1, 4, 1, 49769, ##args                                        \
-    }
 
 constexpr oid hostPowerState_oid[] = YADRO_OID(1, 1);
 constexpr oid versionBMC_oid[] = YADRO_OID(3, 1, 1);
