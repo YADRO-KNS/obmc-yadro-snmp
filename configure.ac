@@ -1,28 +1,26 @@
 AC_PREREQ([2.69])
-AC_INIT([phosphor-snmp], [1.0], [https://github.com/YADRO-KNS/phosphor-snmp])
+AC_INIT([phosphor-snmp], 
+        [m4_esyscmd_s([git describe --dirty --long --always])], 
+        [https://github.com/YADRO-KNS/phosphor-snmp/issues])
 AC_LANG([C++])
 AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 AM_SILENT_RULES([yes])
 
-# Compiler flags
-CXXFLAGS="$CXXFLAGS -fpic -Wall -Werror"
-
-# Check for programs
+# Checks for programs
 AC_PROG_CXX
 AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_MKDIR_P
 
-LT_PREREQ([2.4.6])
-LT_INIT([dlopen disable-static])
+# Checks for typedefs, structures and compiler characteristics.
+AX_CXX_COMPILE_STDCXX_14([noext])
+AX_APPEND_COMPILE_FLAGS([-fpic -Wall -Werror], [CXXFLAGS])
+
+#LT_PREREQ([2.4.6])
+#LT_INIT([dlopen disable-static])
 
 # Checks for libraries.
-PKG_CHECK_MODULES([SYSTEMD], [libsystemd >= 221],,\
-    AC_MSG_ERROR(["systemd required and not found."]))
-AC_SUBST(SYSTEMD_CFLAGS)
-AC_SUBST(SYSTEMD_LIBS)
-
 PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus],,\
     AC_MSG_ERROR(["Required sdbusplus package."]))
 AC_SUBST(SDBUSPLUS_CFLAGS)
@@ -42,9 +40,9 @@ AS_IF([test "x$NETSNMP_CONFIG" == "x"],
     AC_MSG_ERROR(["Requires net-snmp-config"]))
 
 NETSNMP_CFLAGS=`$NETSNMP_CONFIG --base-cflags`
-NETSNMP_LIBS=`$NETSNMP_CONFIG --libs`
+NETSNMP_AGENT_LIBS=`$NETSNMP_CONFIG --agent-libs`
 AC_SUBST([NETSNMP_CFLAGS])
-AC_SUBST([NETSNMP_LIBS])
+AC_SUBST([NETSNMP_AGENT_LIBS])
 
 # Checks for library functions
 LT_INIT # Required for systemd linking
@@ -65,6 +63,7 @@ AC_DEFINE_UNQUOTED([SNMP_PASSWORD], ["$SNMP_PASSWORD"], [SNMPv3 password.])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile \
                  yadro/Makefile \
+                 agent/Makefile \
                  snmpcfg/Makefile \
                  mibs/Makefile \
                  conf/Makefile])
