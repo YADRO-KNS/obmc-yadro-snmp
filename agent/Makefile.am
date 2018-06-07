@@ -2,8 +2,10 @@ AM_CPPFLAGS = -iquote $(top_srcdir)
 
 sbin_PROGRAMS = phosphor-snmp-agent
 
-phosphor_snmp_agent_SOURCES = 		\
-		snmp.cpp 					\
+phosphor_snmp_agent_SOURCES = 	\
+		snmp.cpp 				\
+		snmptrap.cpp 			\
+		yadro/powerstate.cpp 	\
 		main.cpp
 
 phosphor_snmp_agent_CXXFLAGS = $(SDBUSPLUS_CFLAGS) $(NETSNMP_CFLAGS)

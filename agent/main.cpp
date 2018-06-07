@@ -31,6 +31,8 @@
 
 #include <csignal>
 
+#include "yadro/powerstate.hpp"
+
 void print_usage()
 {
     fprintf(stderr, "Usage: %s [OPTIONS]\n\n", PACKAGE_NAME);
@@ -135,6 +137,8 @@ int main(int argc, char* argv[])
 
     // Initialize DBus and MIB objects
 
+    yadro::host::power::state::init();
+
     setup_signals(evt);
 
     // main loop
@@ -147,6 +151,8 @@ int main(int argc, char* argv[])
     TRACE_INFO("%s shuting down.\n", PACKAGE_STRING);
 
     // Release DBus and MIB objects resources
+
+    yadro::host::power::state::destroy();
 
     snmpagent_destroy();
 
