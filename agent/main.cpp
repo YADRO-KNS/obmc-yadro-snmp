@@ -32,6 +32,7 @@
 #include <csignal>
 
 #include "yadro/powerstate.hpp"
+#include "yadro/sensors.hpp"
 
 void print_usage()
 {
@@ -138,6 +139,7 @@ int main(int argc, char* argv[])
     // Initialize DBus and MIB objects
 
     yadro::host::power::state::init();
+    yadro::sensors::init();
 
     setup_signals(evt);
 
@@ -152,6 +154,7 @@ int main(int argc, char* argv[])
 
     // Release DBus and MIB objects resources
 
+    yadro::sensors::destroy();
     yadro::host::power::state::destroy();
 
     snmpagent_destroy();
