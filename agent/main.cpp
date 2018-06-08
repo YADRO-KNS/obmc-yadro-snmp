@@ -33,6 +33,7 @@
 
 #include "yadro/powerstate.hpp"
 #include "yadro/sensors.hpp"
+#include "yadro/software.hpp"
 
 void print_usage()
 {
@@ -140,6 +141,7 @@ int main(int argc, char* argv[])
 
     yadro::host::power::state::init();
     yadro::sensors::init();
+    yadro::software::init();
 
     setup_signals(evt);
 
@@ -154,6 +156,7 @@ int main(int argc, char* argv[])
 
     // Release DBus and MIB objects resources
 
+    yadro::software::destroy();
     yadro::sensors::destroy();
     yadro::host::power::state::destroy();
 
