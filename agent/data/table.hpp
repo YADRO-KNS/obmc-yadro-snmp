@@ -65,7 +65,7 @@ template <typename ItemType> class Table
      */
     Table(const std::string& folder, const std::string& subfolder,
           const interfaces_t interfaces = {}) :
-        _path(folder + "/" + subfolder),
+        _path(folder + (subfolder.empty() ? "" : "/" + subfolder)),
         _interfaces(interfaces)
     {
         _matches.emplace_back(
