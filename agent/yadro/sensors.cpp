@@ -142,18 +142,9 @@ struct Sensor
 
             if (!_notifyOid.empty())
             {
-                size_t stateOidLen = MAX_OID_LEN;
-                _stateOid.resize(stateOidLen);
-
-                // MAX_OID_LEN is 128. It already have 11 elements.
-                // So name may have max 116 chars (+1 item for size)
-                char stateOidStr[256] = {0};
-
-                snprintf(stateOidStr, sizeof(stateOidStr) - 1,
-                         ".1.3.6.1.4.1.49769.1.%lu.1.7.\"%s\"",
-                         _notifyOid.back(), _name.c_str());
-                read_objid(stateOidStr, _stateOid.data(), &stateOidLen);
-                _stateOid.resize(stateOidLen);
+                phosphor::snmp::agent::make_oid(
+                    _stateOid, ".1.3.6.1.4.1.49769.1.%lu.1.7.\"%s\"",
+                    _notifyOid.back(), _name.c_str());
             }
         }
     }
@@ -163,7 +154,7 @@ struct Sensor
      */
     void setFields(const fields_map_t& fields) override
     {
-        auto prevValue = getValue<0>();
+        auto prevValue = getValue<FIELD_SENSOR_VALUE>();
         auto prevState = getState();
 
         setField<FIELD_SENSOR_VALUE>(fields, "Value");
@@ -228,8 +219,9 @@ struct Sensor
     {
         if (!_notifyOid.empty())
         {
-            snmpagent_send_trap(_notifyOid.data(), _notifyOid.size(),
-                                _stateOid.data(), _stateOid.size(), state);
+            phosphor::snmp::agent::Trap trap(_notifyOid);
+            trap.add_field(_stateOid.data(), _stateOid.size(), state);
+            trap.send();
         }
         else
         {
@@ -269,36 +261,41 @@ struct Sensor
     void get_snmp_reply(netsnmp_agent_request_info* reqinfo,
                         netsnmp_request_info* request) const override
     {
+        using namespace phosphor::snmp::agent;
+
         netsnmp_table_request_info* tinfo = netsnmp_extract_table_info(request);
 
         switch (tinfo->colnum)
         {
             case COLUMN_YADROSENSOR_VALUE:
-                snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER,
-                                           std::get<FIELD_SENSOR_VALUE>(data));
+                VariableList::set(request->requestvb,
+                                  getValue<FIELD_SENSOR_VALUE>());
                 break;
+
             case COLUMN_YADROSENSOR_WARNLOW:
-                snmp_set_var_typed_integer(
-                    request->requestvb, ASN_INTEGER,
-                    std::get<FIELD_SENSOR_WARNLOW>(data));
+                VariableList::set(request->requestvb,
+                                  getValue<FIELD_SENSOR_WARNLOW>());
                 break;
+
             case COLUMN_YADROSENSOR_WARNHIGH:
-                snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER,
-                                           std::get<FIELD_SENSOR_WARNHI>(data));
+                VariableList::set(request->requestvb,
+                                  getValue<FIELD_SENSOR_WARNHI>());
                 break;
+
             case COLUMN_YADROSENSOR_CRITLOW:
-                snmp_set_var_typed_integer(
-                    request->requestvb, ASN_INTEGER,
-                    std::get<FIELD_SENSOR_CRITLOW>(data));
+                VariableList::set(request->requestvb,
+                                  getValue<FIELD_SENSOR_CRITLOW>());
                 break;
+
             case COLUMN_YADROSENSOR_CRITHIGH:
-                snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER,
-                                           std::get<FIELD_SENSOR_CRITHI>(data));
+                VariableList::set(request->requestvb,
+                                  getValue<FIELD_SENSOR_CRITHI>());
                 break;
+
             case COLUMN_YADROSENSOR_STATE:
-                snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER,
-                                           getState());
+                VariableList::set(request->requestvb, getState());
                 break;
+
             default:
                 netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
                 break;
@@ -326,7 +323,7 @@ struct Sensor
      */
     template <size_t Idx> int getValue() const
     {
-        return static_cast<int>(std::round(std::get<Idx>(data) /
+        return static_cast<int>(std::round(std::get<Idx>(data) *
                                            std::get<FIELD_SENSOR_SCALE>(data)));
     }
 

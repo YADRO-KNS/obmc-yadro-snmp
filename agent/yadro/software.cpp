@@ -24,6 +24,7 @@
 #include "data/table/item.hpp"
 #include "data/enums.hpp"
 #include "yadro/yadro_oid.hpp"
+#include "snmpvars.hpp"
 
 #define INVALID_ENUM_VALUE 0xFF
 
@@ -148,33 +149,30 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
     void get_snmp_reply(netsnmp_agent_request_info* reqinfo,
                         netsnmp_request_info* request) const override
     {
+        using namespace phosphor::snmp::agent;
+
         netsnmp_table_request_info* tinfo = netsnmp_extract_table_info(request);
 
         switch (tinfo->colnum)
         {
             case COLUMN_YADROSOFTWARE_VERSION:
-                snmp_set_var_typed_value(
-                    request->requestvb, ASN_OCTET_STR,
-                    std::get<FIELD_SOFTWARE_VERSION>(data).c_str(),
-                    std::get<FIELD_SOFTWARE_VERSION>(data).length());
+                VariableList::set(request->requestvb,
+                                  std::get<FIELD_SOFTWARE_VERSION>(data));
                 break;
 
             case COLUMN_YADROSOFTWARE_PURPOSE:
-                snmp_set_var_typed_integer(
-                    request->requestvb, ASN_INTEGER,
-                    std::get<FIELD_SOFTWARE_PURPOSE>(data));
+                VariableList::set(request->requestvb,
+                                  std::get<FIELD_SOFTWARE_PURPOSE>(data));
                 break;
 
             case COLUMN_YADROSOFTWARE_ACTIVATION:
-                snmp_set_var_typed_integer(
-                    request->requestvb, ASN_INTEGER,
-                    std::get<FIELD_SOFTWARE_ACTIVATION>(data));
+                VariableList::set(request->requestvb,
+                                  std::get<FIELD_SOFTWARE_ACTIVATION>(data));
                 break;
 
             case COLUMN_YADROSOFTWARE_PRIORITY:
-                snmp_set_var_typed_integer(
-                    request->requestvb, ASN_INTEGER,
-                    std::get<FIELD_SOFTWARE_PRIORITY>(data));
+                VariableList::set(request->requestvb,
+                                  std::get<FIELD_SOFTWARE_PRIORITY>(data));
                 break;
 
             default:

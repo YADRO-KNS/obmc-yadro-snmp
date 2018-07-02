@@ -4,7 +4,6 @@ sbin_PROGRAMS = phosphor-snmp-agent
 
 phosphor_snmp_agent_SOURCES = 	\
 		snmp.cpp 				\
-		snmptrap.cpp 			\
 		yadro/powerstate.cpp 	\
 		yadro/sensors.cpp 		\
 		yadro/software.cpp 		\

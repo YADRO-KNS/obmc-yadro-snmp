@@ -36,9 +36,10 @@ namespace power
 {
 namespace state
 {
+using OID = phosphor::snmp::agent::OID;
 
-static constexpr oid state_oid[] = YADRO_OID(1, 1);
-static constexpr oid state_notify_oid[] = YADRO_OID(0, 1);
+static const OID state_oid = YADRO_OID(1, 1);
+static const OID notify_oid = YADRO_OID(0, 1);
 
 struct State : public phosphor::snmp::data::Scalar<int32_t>
 {
@@ -61,8 +62,9 @@ struct State : public phosphor::snmp::data::Scalar<int32_t>
             TRACE_INFO("Host power state changed: %d -> %d\n", prev,
                        getValue());
 
-            snmpagent_send_trap(state_notify_oid, OID_LENGTH(state_notify_oid),
-                                state_oid, OID_LENGTH(state_oid), getValue());
+            phosphor::snmp::agent::Trap trap(notify_oid);
+            trap.add_field(state_oid, getValue());
+            trap.send();
         }
     }
 };
@@ -85,8 +87,8 @@ static int State_snmp_handler(netsnmp_mib_handler* /*handler*/,
             for (netsnmp_request_info* request = requests; request;
                  request = request->next)
             {
-                snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER,
-                                           state.getValue());
+                phosphor::snmp::agent::VariableList::set(request->requestvb,
+                                                         state.getValue());
             }
             break;
     }
@@ -101,13 +103,13 @@ void init()
     state.update();
 
     netsnmp_register_read_only_instance(netsnmp_create_handler_registration(
-        "yadroHostPowerState", State_snmp_handler, state_oid,
-        OID_LENGTH(state_oid), HANDLER_CAN_RONLY));
+        "yadroHostPowerState", State_snmp_handler, state_oid.data(),
+        state_oid.size(), HANDLER_CAN_RONLY));
 }
 void destroy()
 {
     DEBUGMSGTL(("yadro:shutdown", "destroy yadroHostPowerState\n"));
-    unregister_mib(const_cast<oid*>(state_oid), OID_LENGTH(state_oid));
+    unregister_mib(const_cast<oid*>(state_oid.data()), state_oid.size());
 }
 
 } // namespace state
