@@ -34,6 +34,7 @@
 #include "yadro/powerstate.hpp"
 #include "yadro/sensors.hpp"
 #include "yadro/software.hpp"
+#include "yadro/inventory.hpp"
 
 void print_usage()
 {
@@ -52,9 +53,12 @@ void print_usage()
 }
 
 // parse_args error codes
-#define EC_SHOW_USAGE    1
-#define EC_ERROR        -1
-#define EC_SUCCESS       0
+enum
+{
+    EC_SHOW_USAGE = 1,
+    EC_ERROR = -1,
+    EC_SUCCESS = 0,
+};
 
 int parse_args(int argc, char** argv)
 {
@@ -142,6 +146,7 @@ int main(int argc, char* argv[])
     yadro::host::power::state::init();
     yadro::sensors::init();
     yadro::software::init();
+    yadro::inventory::init();
 
     setup_signals(evt);
 
@@ -156,6 +161,7 @@ int main(int argc, char* argv[])
 
     // Release DBus and MIB objects resources
 
+    yadro::inventory::destroy();
     yadro::software::destroy();
     yadro::sensors::destroy();
     yadro::host::power::state::destroy();
