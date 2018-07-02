@@ -7,6 +7,7 @@ phosphor_snmp_agent_SOURCES = 	\
 		yadro/powerstate.cpp 	\
 		yadro/sensors.cpp 		\
 		yadro/software.cpp 		\
+		yadro/inventory.cpp 	\
 		main.cpp
 
 phosphor_snmp_agent_CXXFLAGS = $(SDBUSPLUS_CFLAGS) $(NETSNMP_CFLAGS)
