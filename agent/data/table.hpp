@@ -178,8 +178,18 @@ template <typename ItemType> class Table
     {
         sdbusplus::message::object_path path;
         std::vector<std::string> data;
-        m.read(path, data);
-
+        try
+        {
+            m.read(path, data);
+        }
+        catch (const sdbusplus::exception::SdBusError& e)
+        {
+            TRACE_ERROR("data/table: Failed to parse signal data. "
+                        "ERROR='%s', REPLY_SIG='%s', PATH='%s', "
+                        "IFACE='%s', MEMBER='%s', object path='%s'\n",
+                        e.what(), m.get_signature(), m.get_path(),
+                        m.get_interface(), m.get_member(), path.str.c_str());
+        }
         dropItem(path.str);
     }
 

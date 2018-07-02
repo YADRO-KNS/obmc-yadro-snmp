@@ -23,6 +23,7 @@
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/message.hpp>
 #include <sdbusplus/bus/match.hpp>
+#include <sdbusplus/exception.hpp>
 
 namespace sdbusplus
 {
@@ -63,7 +64,13 @@ struct helper
         sdbusplus::message::message respMsg = callMethod<Args...>(
             busName, path, interface, method, std::forward<Args>(args)...);
         Ret resp;
-        respMsg.read(resp);
+        try
+        {
+            respMsg.read(resp);
+        }
+        catch (const sdbusplus::exception::SdBusError&)
+        {
+        }
         return resp;
     }
 
