@@ -76,11 +76,11 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
     /**
      * @brief Object constructor.
      */
-    Software(const std::string& path) :
+    Software(const std::string& folder, const std::string& name) :
         phosphor::snmp::data::table::Item<std::string, uint8_t, uint8_t,
                                           uint8_t>(
-            path,               // Object path
-            "",                 // No subfolder
+            folder, name,
+            "",                 // Version
             INVALID_ENUM_VALUE, // Purpose
             INVALID_ENUM_VALUE, // Activation
             INVALID_ENUM_VALUE) // Priority
@@ -126,7 +126,7 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
         {
             TRACE_DEBUG("Software '%s' version='%s', purpose=%d changed: "
                         "activation %d -> %d, priority %d -> %d\n",
-                        path.c_str(),
+                        name.c_str(),
                         std::get<FIELD_SOFTWARE_VERSION>(data).c_str(),
                         std::get<FIELD_SOFTWARE_PURPOSE>(data), prevActivation,
                         std::get<FIELD_SOFTWARE_ACTIVATION>(data), prevPriority,
