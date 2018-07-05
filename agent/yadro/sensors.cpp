@@ -92,10 +92,10 @@ struct Sensor
     /**
      * @brief Object contructor.
      */
-    Sensor(const std::string& path) :
+    Sensor(const std::string& folder, const std::string& name) :
         phosphor::snmp::data::table::Item<int64_t, int64_t, bool, int64_t, bool,
                                           int64_t, bool, int64_t, bool,
-                                          int64_t>(path,
+                                          int64_t>(folder, name,
                                                    0,        // Value
                                                    0, false, // WarningLow
                                                    0, false, // WarningHigh
@@ -103,21 +103,11 @@ struct Sensor
                                                    0, false, // CriticalHigh
                                                    1)        // Scale
     {
-        auto n = path.rfind('/');
+        auto n = folder.rfind('/');
         if (n != std::string::npos)
         {
-            _name = path.substr(n + 1);
-            auto f = path.rfind('/', n - 1);
-            if (f != std::string::npos)
-            {
-                _type = path.substr(f + 1, n - f - 1);
-            }
-        }
-
-        // Prepare for send traps
-        if (!_type.empty())
-        {
-            switch (_type[0])
+            // Prepare for send traps
+            switch (folder[n + 1])
             {
                 case ST_TEMPERATURE:
                     _notifyOid.assign(YADRO_OID(0, 2));
@@ -140,12 +130,24 @@ struct Sensor
                     break;
             }
 
-            if (!_notifyOid.empty())
+            // Correct scale power
+            switch (folder[n + 1])
             {
-                phosphor::snmp::agent::make_oid(
-                    _stateOid, ".1.3.6.1.4.1.49769.1.%lu.1.7.\"%s\"",
-                    _notifyOid.back(), _name.c_str());
+                case ST_TEMPERATURE:
+                case ST_VOLTAGE:
+                case ST_CURRENT:
+                case ST_POWER:
+                    // Required for TEXTUAL-CONVENTION in YADRO-MIB.txt
+                    _power = -3;
+                    break;
             }
+        }
+
+        if (!_notifyOid.empty())
+        {
+            phosphor::snmp::agent::make_oid(
+                _stateOid, ".1.3.6.1.4.1.49769.1.%lu.1.7.\"%s\"",
+                _notifyOid.back(), name.c_str());
         }
     }
 
@@ -172,7 +174,7 @@ struct Sensor
             fields.at(Scale).is<int64_t>())
         {
             std::get<FIELD_SENSOR_SCALE>(data) = static_cast<int64_t>(
-                powf(10.f, getPower() - fields.at(Scale).get<int64_t>()));
+                powf(10.f, _power - fields.at(Scale).get<int64_t>()));
         }
 
         auto lastState = getState();
@@ -181,7 +183,7 @@ struct Sensor
             prevState != lastState)
         {
             TRACE_DEBUG("Sensor '%s' changed: %d -> %d, state: %d -> %d\n",
-                        path.c_str(), prevValue, getValue<FIELD_SENSOR_VALUE>(),
+                        name.c_str(), prevValue, getValue<FIELD_SENSOR_VALUE>(),
                         prevState, lastState);
         }
 
@@ -196,7 +198,7 @@ struct Sensor
      */
     void onCreate() override
     {
-        TRACE_DEBUG("Sensor '%s' added, state=%d\n", path.c_str(), getState());
+        TRACE_DEBUG("Sensor '%s' added, state=%d\n", name.c_str(), getState());
         send_notify(E_NORMAL);
     }
 
@@ -205,7 +207,7 @@ struct Sensor
      */
     void onDestroy() override
     {
-        TRACE_DEBUG("Sensor '%s' removed, state=%d\n", path.c_str(),
+        TRACE_DEBUG("Sensor '%s' removed, state=%d\n", name.c_str(),
                     getState());
         send_notify(E_DISABLED);
     }
@@ -217,7 +219,7 @@ struct Sensor
      */
     void send_notify(state_t state)
     {
-        if (!_notifyOid.empty())
+        if (!_notifyOid.empty() && !_stateOid.empty())
         {
             phosphor::snmp::agent::Trap trap(_notifyOid);
             trap.add_field(_stateOid.data(), _stateOid.size(), state);
@@ -226,7 +228,7 @@ struct Sensor
         else
         {
             TRACE_ERROR("Notify is unsupported for sensor '%s'\n",
-                        path.c_str());
+                        name.c_str());
         }
     }
 
@@ -303,22 +305,6 @@ struct Sensor
     }
 
     /**
-     * @brief Returns sensor scale power depends on sensor type.
-     */
-    int getPower() const
-    {
-        switch (_type[0])
-        {
-            case ST_TEMPERATURE:
-            case ST_VOLTAGE:
-            case ST_CURRENT:
-            case ST_POWER:
-                return -3;
-        }
-        return 0;
-    }
-
-    /**
      * @brief Scale and round sensors value.
      */
     template <size_t Idx> int getValue() const
@@ -327,10 +313,9 @@ struct Sensor
                                            std::get<FIELD_SENSOR_SCALE>(data)));
     }
 
-    std::string _type;
-    std::string _name;
     std::vector<oid> _notifyOid;
     std::vector<oid> _stateOid;
+    int _power = 0;
 };
 
 struct SensorsTable : public phosphor::snmp::data::Table<Sensor>

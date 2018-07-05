@@ -88,9 +88,10 @@ template <typename ItemType> class Table
         auto data = sdbusplus::helper::helper::getSubTree(_path, _interfaces);
 
         // Drop sensors if it not present in answer
+        auto path = _path + "/";
         for (auto it = _items.begin(); it != _items.end();)
         {
-            if (data.find((*it)->path) == data.end())
+            if (data.find(path + (*it)->name) == data.end())
             {
                 it = dropItem(it);
             }
@@ -198,13 +199,14 @@ template <typename ItemType> class Table
      */
     ItemType& getItem(const std::string& path)
     {
-        auto it = std::lower_bound(_items.begin(), _items.end(), path);
-        if (it != _items.end() && (*it)->path == path)
+        auto name = path.substr(_path.length() + 1); // Skip following '/'
+        auto it = std::lower_bound(_items.begin(), _items.end(), name);
+        if (it != _items.end() && (*it)->name == name)
         {
             return *(*it);
         }
 
-        it = _items.emplace(it, std::make_unique<ItemType>(path));
+        it = _items.emplace(it, std::make_unique<ItemType>(_path, name));
         (*it)->onCreate();
         return *(*it);
     }
@@ -232,8 +234,9 @@ template <typename ItemType> class Table
      */
     void dropItem(const std::string& path)
     {
-        auto it = std::lower_bound(_items.begin(), _items.end(), path);
-        if (it != _items.end() && (*it)->path == path)
+        auto name = path.substr(_path.length() + 1); // Skip following '/'
+        auto it = std::lower_bound(_items.begin(), _items.end(), name);
+        if (it != _items.end() && (*it)->name == name)
         {
             dropItem(it);
         }
@@ -263,8 +266,8 @@ template <typename ItemType> class Table
         {
             auto& item = table._items[index];
 
-            auto name = item->path.substr(table._path.length() + 1);
-            snmp_set_var_value(idx_data, name.c_str(), name.length());
+            snmp_set_var_value(idx_data, item->name.c_str(),
+                               item->name.length());
 
             *data_ctx = item.get();
             *loop_ctx = reinterpret_cast<void*>(index + 1);

@@ -58,13 +58,15 @@ template <typename... T> struct Item
     /**
      * @brief Object constructor
      *
-     * @param p - DBus object path
+     * @param folder - Base folder for DBus object path
+     * @param name - DBus object path relative by folder
      * @param args - Default values for each fields
      */
-    Item(const std::string& p, T&&... args) :
-        path(p), data(std::forward<T>(args)...),
+    Item(const std::string& folder, const std::string& name, T&&... args) :
+        name(name), data(std::forward<T>(args)...),
         changedMatch(sdbusplus::helper::helper::getBus(),
-                     sdbusplus::bus::match::rules::propertiesChanged(path),
+                     sdbusplus::bus::match::rules::propertiesChanged(
+                         folder + "/" + name),
                      std::bind(&Item<T...>::onPropertiesChanged, this,
                                std::placeholders::_1))
     {
@@ -123,7 +125,7 @@ template <typename... T> struct Item
     virtual void get_snmp_reply(netsnmp_agent_request_info* reqinfo,
                                 netsnmp_request_info* request) const = 0;
 
-    std::string path;
+    std::string name;
     values_t data;
 
   private:
@@ -136,7 +138,7 @@ template <typename... T> struct Item
 template <typename ItemType>
 inline bool operator<(const std::unique_ptr<ItemType>& o, const std::string& s)
 {
-    return o->path < s;
+    return o->name < s;
 }
 
 } // namespace table
