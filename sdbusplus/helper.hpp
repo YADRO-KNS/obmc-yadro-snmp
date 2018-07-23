@@ -61,11 +61,11 @@ struct helper
                                  const std::string& interface,
                                  const std::string& method, Args&&... args)
     {
-        sdbusplus::message::message respMsg = callMethod<Args...>(
-            busName, path, interface, method, std::forward<Args>(args)...);
         Ret resp;
         try
         {
+            sdbusplus::message::message respMsg = callMethod<Args...>(
+                busName, path, interface, method, std::forward<Args>(args)...);
             respMsg.read(resp);
         }
         catch (const sdbusplus::exception::SdBusError&)

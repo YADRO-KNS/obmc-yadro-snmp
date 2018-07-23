@@ -56,14 +56,13 @@ template <typename T> class Scalar
            const std::string& iface, const std::string& prop,
            const T& initValue) :
         _value(initValue),
-        _busName(busName), _path(path), _iface(iface), _prop(prop)
+        _busName(busName), _path(path), _iface(iface), _prop(prop),
+        _onChangedMatch(sdbusplus::helper::helper::getBus(),
+                        sdbusplus::bus::match::rules::propertiesChanged(
+                            path.c_str(), iface.c_str()),
+                        std::bind(&Scalar<T>::onPropertyChanged, this,
+                                  std::placeholders::_1))
     {
-        onChangedMatch = std::make_unique<sdbusplus::bus::match::match>(
-            sdbusplus::helper::helper::getBus(),
-            sdbusplus::bus::match::rules::propertiesChanged(path.c_str(),
-                                                            iface.c_str()),
-            std::bind(&Scalar<T>::onPropertyChanged, this,
-                      std::placeholders::_1));
     }
 
     /**
@@ -71,15 +70,22 @@ template <typename T> class Scalar
      */
     void update()
     {
-        auto r = sdbusplus::helper::helper::callMethod(
-            _busName, _path, sdbusplus::helper::PROPERTIES_IFACE, "Get", _iface,
-            _prop);
-
-        if (!r.is_method_error())
+        try
         {
+            auto r = sdbusplus::helper::helper::callMethod(
+                _busName, _path, sdbusplus::helper::PROPERTIES_IFACE, "Get",
+                _iface, _prop);
+
             value_t var;
             r.read(var);
             setValue(var);
+        }
+        catch (const sdbusplus::exception::SdBusError&)
+        {
+            // Corresponding service is not started yet.
+            // When service is started, we'll receive data with
+            // `propertiesChanged` signal.
+            // So, this catch block is just for silencing the exception.
         }
     }
 
@@ -136,15 +142,13 @@ template <typename T> class Scalar
     }
 
   private:
-    using match_ptr = std::unique_ptr<sdbusplus::bus::match::match>;
-
     T _value;
     std::string _busName;
     std::string _path;
     std::string _iface;
     std::string _prop;
 
-    match_ptr onChangedMatch;
+    sdbusplus::bus::match::match _onChangedMatch;
 };
 
 } // namespace data
