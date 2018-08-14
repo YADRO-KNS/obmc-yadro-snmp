@@ -1,7 +1,7 @@
 /**
  * @brief SNMP Configuration manager
  *
- * This file is part of phosphor-snmp project.
+ * This file is part of yadro-snmp project.
  *
  * Copyright (c) 2018 YADRO
  *

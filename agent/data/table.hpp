@@ -1,7 +1,7 @@
 /**
  * @brief Export DBus objects tree to MIB table
  *
- * This file is part of phosphor-snmp project.
+ * This file is part of yadro-snmp project.
  *
  * Copyright (c) 2018 YADRO
  *
