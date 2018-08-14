@@ -1,19 +1,21 @@
-# phosphor-snmp
+# yadro-snmp
 
 This project containt two subprojects:
-- [yadro net-snmp extension](#yadro-net-snmp-extension)
+- [yadro-snmp-agent](#yadro-snmp-agent)
 - [snmpcfg - DBus service for manage snmp configuration](#snmpcfg)
 
-## yadro net-snmp extension
+## yadro-snmp-agent
 
-This is plugin for net-snmp daemon. It ask DBus for available sensors and export they values over SNMP.
+This is a subagent for the original net-snmp daemon. 
+It queries DBus for values of available sensors, inventory items and some 
+other stuff, and exports their actual values over SNMP.
 
 ### YADRO-MIB.txt
 
 File YADOR-MIB.txt describe a struc of exported data.
 This file can be found at OpenBMC hosts in folder `/usr/share/snmp/mibs` and may be fetched from OpenBMC host over http.
 ```shell
-$ wget http://<IP-addres-of-BMC-host>/mibs/YADRO-MIB.txt
+$ wget https://<IP-addres-of-BMC-host>/mibs/YADRO-MIB.txt
 ```
 
 ### Basic SNMP 

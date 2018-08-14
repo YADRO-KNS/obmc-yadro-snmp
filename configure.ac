@@ -1,7 +1,7 @@
 AC_PREREQ([2.69])
 AC_INIT([yadro-snmp], 
         [m4_esyscmd_s([git describe --dirty --long --always])], 
-        [https://github.com/YADRO-KNS/phosphor-snmp/issues])
+        [https://github.com/YADRO-KNS/yadro-snmp/issues])
 AC_LANG([C++])
 AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 AM_SILENT_RULES([yes])
