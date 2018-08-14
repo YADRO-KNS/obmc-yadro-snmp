@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([phosphor-snmp], 
+AC_INIT([yadro-snmp], 
         [m4_esyscmd_s([git describe --dirty --long --always])], 
         [https://github.com/YADRO-KNS/phosphor-snmp/issues])
 AC_LANG([C++])
@@ -45,9 +45,9 @@ AC_SUBST([NETSNMP_AGENT_LIBS])
 LT_INIT # Required for systemd linking
 
 AC_ARG_ENABLE([agent],
-    AS_HELP_STRING([--disable-agent], [Disable phosphor-snmp-agent.]))
+    AS_HELP_STRING([--disable-agent], [Disable yadro-snmp-agent.]))
 AC_ARG_ENABLE([cfg-manager],
-    AS_HELP_STRING([--disable-cfg-manager], [Disable phosphor-snmp-cfg-manager.]))
+    AS_HELP_STRING([--disable-cfg-manager], [Disable yadro-snmp-cfg-manager.]))
 
 AM_CONDITIONAL([WANT_AGENT], [test "x$enable_agent" != "xno"])
 AM_CONDITIONAL([WANT_CFG_MANAGER], [test "x$enable_cfg_manager" != "xno"])
