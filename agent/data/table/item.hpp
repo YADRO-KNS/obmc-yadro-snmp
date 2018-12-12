@@ -36,7 +36,18 @@ namespace table
  */
 template <typename... T> struct Item
 {
-    using variant_t = sdbusplus::message::variant<T...>;
+    /*
+     * The `std::variant` allows to keep duplicates of types,
+     * but `std::get<>()` and `std::holds_alternative<>()` is ill-formed
+     * in this case.
+     *
+     * So we can't use here:
+     *   using variant_t = sdbusplus::message::variant<T...>;
+     * and we should specify all possible types.
+     */
+    using variant_t =
+        sdbusplus::message::variant<int64_t, std::string, bool, uint8_t>;
+
     using values_t = std::tuple<T...>;
     using fields_map_t = std::map<std::string, variant_t>;
 
@@ -112,10 +123,10 @@ template <typename... T> struct Item
     {
         using FieldType = typename std::tuple_element<Index, values_t>::type;
         if (fieldsMap.find(propertyName) != fieldsMap.end() &&
-            fieldsMap.at(propertyName).template is<FieldType>())
+            std::holds_alternative<FieldType>(fieldsMap.at(propertyName)))
         {
             std::get<Index>(data) =
-                fieldsMap.at(propertyName).template get<FieldType>();
+                std::get<FieldType>(fieldsMap.at(propertyName));
         }
     }
 

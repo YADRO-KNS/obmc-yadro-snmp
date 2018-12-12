@@ -100,10 +100,10 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
                       const phosphor::snmp::data::DBusEnum<uint8_t>& enumcvt)
     {
         if (fields.find(field) != fields.end() &&
-            fields.at(field).is<std::string>())
+            std::holds_alternative<std::string>(fields.at(field)))
         {
             std::get<Idx>(data) =
-                enumcvt.get(fields.at(field).get<std::string>());
+                enumcvt.get(std::get<std::string>(fields.at(field)));
         }
     }
 

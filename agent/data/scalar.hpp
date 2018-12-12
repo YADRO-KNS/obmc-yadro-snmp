@@ -137,7 +137,7 @@ template <typename T> class Scalar
      */
     virtual void setValue(value_t& var)
     {
-        auto newValue = var.template get<T>();
+        auto newValue = sdbusplus::message::variant_ns::get<T>(var);
         std::swap(_value, newValue);
     }
 
