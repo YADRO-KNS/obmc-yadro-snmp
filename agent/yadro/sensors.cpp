@@ -171,10 +171,10 @@ struct Sensor
 
         constexpr auto Scale = "Scale";
         if (fields.find(Scale) != fields.end() &&
-            fields.at(Scale).is<int64_t>())
+            std::holds_alternative<int64_t>(fields.at(Scale)))
         {
             std::get<FIELD_SENSOR_SCALE>(data) = static_cast<int64_t>(
-                powf(10.f, _power - fields.at(Scale).get<int64_t>()));
+                powf(10.f, _power - std::get<int64_t>(fields.at(Scale))));
         }
 
         auto lastState = getState();
