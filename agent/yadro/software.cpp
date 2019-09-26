@@ -182,7 +182,7 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
     }
 };
 
-constexpr oid softwareOid[] = YADRO_OID(3);
+constexpr oid softwareOid[] = YADRO_OID(5);
 constexpr auto SOFTWARE_FOLDER = "/xyz/openbmc_project/software";
 
 static phosphor::snmp::data::Table<Software>
