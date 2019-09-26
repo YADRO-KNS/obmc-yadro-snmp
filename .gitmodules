@@ -1,0 +1,3 @@
+[submodule "mibs"]
+	path = mibs
+	url = git://github.com/YADRO-KNS/snmp-mibs.git

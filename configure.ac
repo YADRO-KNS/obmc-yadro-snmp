@@ -62,6 +62,6 @@ AS_IF([test "x$enable_cfg_manager" != "xno"], [
 
 # Create configured output
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile mibs/Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
