@@ -172,6 +172,13 @@ YADRO-MIB::yadroTempSensorState."OUTlet_Temp2" = INTEGER: normal(1)
 ...
 ```
 
+Get current value of a specific sensor:
+```
+$ snmpget -v2c -cpublic malevich.dev.yadro.com YADRO-MIB::yadroTempSensorValue.\"OUTlet_Temp2\"
+
+YADRO-MIB::yadroTempSensorValue."OUTlet_Temp2" = INTEGER: 29.500 °C
+```
+
 ### SNMPv3 support
 
 For manage SNMPv3 access in runtime required `snmpusm` and `snmpvacm` tools from `net-snmp` package.
