@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -iquote $(top_srcdir)
 
-sbin_PROGRAMS = yadro-snmp-agent
+bin_PROGRAMS = yadro-snmp-agent
 
 yadro_snmp_agent_SOURCES = 		\
 		snmp.cpp 				\
