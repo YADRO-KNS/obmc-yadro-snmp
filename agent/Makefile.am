@@ -13,3 +13,6 @@ yadro_snmp_agent_SOURCES = 		\
 yadro_snmp_agent_CXXFLAGS = $(SDBUSPLUS_CFLAGS) $(NETSNMP_CFLAGS)
 yadro_snmp_agent_LDADD = $(SDBUSPLUS_LIBS) $(NETSNMP_AGENT_LIBS)
 
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = yadro-snmp-agent.service
+endif

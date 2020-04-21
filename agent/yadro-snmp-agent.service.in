@@ -1,0 +1,17 @@
+[Unit]
+Description=Yadro SNMP Sub Agent
+Wants=snmpd.service
+After=snmpd.service
+Wants=xyz.openbmc_project.State.Host.service
+After=xyz.openbmc_project.State.Host.service
+Wants=org.openbmc.control.Power@@HOST_INSTANCE@.service
+After=org.openbmc.control.Power@@HOST_INSTANCE@.service
+
+[Service]
+Restart=always
+Environment=OPTIONS="-Ls0-6d"
+EnvironmentFile=-@sysconfdir@/default/yadro-snmp-agent
+ExecStart=@bindir@/yadro-snmp-agent $OPTIONS
+
+[Install]
+WantedBy=@SYSTEMD_TARGET@

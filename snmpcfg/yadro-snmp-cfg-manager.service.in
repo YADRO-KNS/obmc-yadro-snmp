@@ -1,0 +1,13 @@
+[Unit]
+Description=Yadro SNMP configuration manager
+After=snmpd.service
+
+[Service]
+ExecStart=@bindir@/yadro-snmpcfg
+SyslogIdentifier=yadro-snmpcfg
+Restart=always
+Type=dbus
+BusName=xyz.openbmc_project.SNMPCfg
+
+[Install]
+WantedBy=@SYSTEMD_TARGET@
