@@ -30,4 +30,6 @@ xyz/openbmc_project/SNMPCfg.interface.yaml
 	$(SDBUSPLUSPLUS) -r $(srcdir) interface server-header \
 xyz.openbmc_project.SNMPCfg > $@
 
-
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = yadro-snmp-cfg-manager.service
+endif

@@ -44,6 +44,27 @@ AC_SUBST([NETSNMP_AGENT_LIBS])
 # Checks for library functions
 LT_INIT # Required for systemd linking
 
+PKG_PROG_PKG_CONFIG
+AC_ARG_WITH([systemdsystemunitdir],
+     [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],
+     [],
+     [with_systemdsystemunitdir=auto]
+)
+AS_IF([test "x$with_systemdsystemunitdir" = "xyes" -o "x$with_systemdsystemunitdir" = "xauto"],
+    [def_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)
+     AS_IF([test "x$def_systemdsystemunitdir" = "x"],
+           [AS_IF([test "x$with_systemdsystemunitdir" = "xyes"],
+                  [AC_MSG_ERROR([systemd support requested but pkg-config unable to query systemd package])]
+            )
+            with_systemdsystemunitdir=no],
+           [with_systemdsystemunitdir="$def_systemdsystemunitdir"]
+     )]
+)
+AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
+      [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])]
+)
+AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
+
 AC_ARG_ENABLE([agent],
     AS_HELP_STRING([--disable-agent], [Disable yadro-snmp-agent.]))
 AC_ARG_ENABLE([cfg-manager],
@@ -52,12 +73,20 @@ AC_ARG_ENABLE([cfg-manager],
 AM_CONDITIONAL([WANT_AGENT], [test "x$enable_agent" != "xno"])
 AM_CONDITIONAL([WANT_CFG_MANAGER], [test "x$enable_cfg_manager" != "xno"])
 
+AC_ARG_VAR(HOST_INSTANCE, "OpenBMC host instance")
+AS_IF([test "x$HOST_INSTANCE" = "x"], [HOST_INSTANCE="0"])
+
+AC_ARG_VAR(SYSTEMD_TARGET, "Target for starting this service")
+AS_IF([test "x$SYSTEMD_TARGET" = "x"], [SYSTEMD_TARGET="multi-user.target"])
+
 # Package specific checks.
 AS_IF([test "x$enable_agent" != "xno"], [
        AC_CONFIG_FILES([agent/Makefile])
+       AC_CONFIG_FILES([agent/yadro-snmp-agent.service])
 ])
 AS_IF([test "x$enable_cfg_manager" != "xno"], [
        AC_CONFIG_FILES([snmpcfg/Makefile])
+       AC_CONFIG_FILES([snmpcfg/yadro-snmp-cfg-manager.service])
 ])
 
 # Create configured output
