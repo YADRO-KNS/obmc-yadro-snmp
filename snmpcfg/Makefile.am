@@ -1,4 +1,4 @@
-sbin_PROGRAMS = yadro-snmpcfg 
+bin_PROGRAMS = yadro-snmpcfg
 
 nobase_nodist_include_HEADERS = \
 	xyz/openbmc_project/SNMPCfg/server.hpp
