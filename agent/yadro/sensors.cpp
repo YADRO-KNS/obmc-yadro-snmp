@@ -308,11 +308,16 @@ struct SensorsTable : public phosphor::snmp::data::Table<Sensor>
 {
     using OID = std::vector<oid>;
 
-    static constexpr auto SENSOR_FOLDER = "/xyz/openbmc_project/sensors";
-
     SensorsTable(const std::string& folder, const std::string& tableName,
                  const OID& tableOID) :
-        phosphor::snmp::data::Table<Sensor>(SENSOR_FOLDER, folder),
+        phosphor::snmp::data::Table<Sensor>(
+            "/xyz/openbmc_project/sensors", folder,
+            {
+                "xyz.openbmc_project.Sensor.Value",
+                "xyz.openbmc_project.Sensor.Threshold.Warning",
+                "xyz.openbmc_project.Sensor.Threshold.Critical",
+                "xyz.openbmc_project.Sensor.Threshold.Fatal",
+            }),
         tableName(tableName), tableOID(tableOID)
 
     {

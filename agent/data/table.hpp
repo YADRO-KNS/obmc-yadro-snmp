@@ -163,11 +163,31 @@ template <typename ItemType> class Table
 
         if (0 == path.str.compare(0, _path.length(), _path))
         {
+            // Skip unnecessary objects
+            if (!_interfaces.empty())
+            {
+                bool required = false;
+                for (const auto& iface : _interfaces)
+                {
+                    auto it = data.find(iface);
+                    if (it != data.end())
+                    {
+                        required = true;
+                        break;
+                    }
+                }
+
+                if (!required)
+                {
+                    return;
+                }
+            }
+
             auto& item = getItem(path.str);
 
-            for (auto it = data.cbegin(); it != data.cend(); ++it)
+            for (const auto& [iface, fields] : data)
             {
-                item.setFields(it->second);
+                item.setFields(fields);
             }
         }
     }
