@@ -35,9 +35,8 @@ namespace sensors
  * @brief Sensor implementation.
  */
 struct Sensor
-    : public phosphor::snmp::data::table::Item<int64_t, int64_t, bool, int64_t,
-                                               bool, int64_t, bool, int64_t,
-                                               bool, int64_t>
+    : public phosphor::snmp::data::table::Item<double, double, bool, double,
+                                               bool, double, bool, double, bool>
 {
     /**
      * @brief State codes like in MIB file.
@@ -76,7 +75,6 @@ struct Sensor
         FIELD_SENSOR_CRITLOW_ALARM,
         FIELD_SENSOR_CRITHI,
         FIELD_SENSOR_CRITHI_ALARM,
-        FIELD_SENSOR_SCALE,
     };
 
     // Sensor types (first letter in sensors folder name)
@@ -93,15 +91,14 @@ struct Sensor
      * @brief Object contructor.
      */
     Sensor(const std::string& folder, const std::string& name) :
-        phosphor::snmp::data::table::Item<int64_t, int64_t, bool, int64_t, bool,
-                                          int64_t, bool, int64_t, bool,
-                                          int64_t>(folder, name,
-                                                   0,        // Value
-                                                   0, false, // WarningLow
-                                                   0, false, // WarningHigh
-                                                   0, false, // CriticalLow
-                                                   0, false, // CriticalHigh
-                                                   1)        // Scale
+        phosphor::snmp::data::table::Item<double, double, bool, double, bool,
+                                          double, bool, double, bool>(
+            folder, name,
+            .0,        // Value
+            .0, false, // WarningLow
+            .0, false, // WarningHigh
+            .0, false, // CriticalLow
+            .0, false) // CriticalHigh
     {
         auto n = folder.rfind('/');
         if (n != std::string::npos)
@@ -131,14 +128,11 @@ struct Sensor
             }
 
             // Correct scale power
+            // Required for TEXTUAL-CONVENTION in YADRO-MIB.txt
             switch (folder[n + 1])
             {
-                case ST_TEMPERATURE:
-                case ST_VOLTAGE:
-                case ST_CURRENT:
-                case ST_POWER:
-                    // Required for TEXTUAL-CONVENTION in YADRO-MIB.txt
-                    _power = -3;
+                case ST_TACHOMETER:
+                    _power = 0;
                     break;
             }
         }
@@ -168,14 +162,6 @@ struct Sensor
         setField<FIELD_SENSOR_CRITLOW_ALARM>(fields, "CriticalAlarmLow");
         setField<FIELD_SENSOR_CRITHI>(fields, "CriticalHigh");
         setField<FIELD_SENSOR_CRITHI_ALARM>(fields, "CriticalAlarmHigh");
-
-        constexpr auto Scale = "Scale";
-        if (fields.find(Scale) != fields.end() &&
-            std::holds_alternative<int64_t>(fields.at(Scale)))
-        {
-            std::get<FIELD_SENSOR_SCALE>(data) = static_cast<int64_t>(
-                powf(10.f, _power - std::get<int64_t>(fields.at(Scale))));
-        }
 
         auto lastState = getState();
 
@@ -309,13 +295,13 @@ struct Sensor
      */
     template <size_t Idx> int getValue() const
     {
-        return static_cast<int>(std::round(std::get<Idx>(data) *
-                                           std::get<FIELD_SENSOR_SCALE>(data)));
+        return static_cast<int>(
+            std::round(std::get<Idx>(data) * powf(10.f, _power)));
     }
 
     std::vector<oid> _notifyOid;
     std::vector<oid> _stateOid;
-    int _power = 0;
+    int _power = 3;
 };
 
 struct SensorsTable : public phosphor::snmp::data::Table<Sensor>
