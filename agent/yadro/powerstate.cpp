@@ -59,8 +59,9 @@ struct State : public phosphor::snmp::data::Scalar<int32_t>
 
         if (prev != getValue())
         {
-            TRACE_DEBUG("Host power state changed: %d -> %d\n", prev,
-                        getValue());
+            DEBUGMSGTL(("yadro::powerstate",
+                        "Host power state changed: %d -> %d\n", prev,
+                        getValue()));
 
             phosphor::snmp::agent::Trap trap(notify_oid);
             trap.add_field(state_oid, getValue());
