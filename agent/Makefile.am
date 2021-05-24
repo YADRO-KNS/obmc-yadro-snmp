@@ -10,8 +10,8 @@ yadro_snmp_agent_SOURCES = 		\
 		yadro/inventory.cpp 	\
 		main.cpp
 
-yadro_snmp_agent_CXXFLAGS = $(SDBUSPLUS_CFLAGS) $(NETSNMP_CFLAGS)
-yadro_snmp_agent_LDADD = $(SDBUSPLUS_LIBS) $(NETSNMP_AGENT_LIBS)
+yadro_snmp_agent_CXXFLAGS = $(SDBUSPLUS_CFLAGS) $(SDEVENTPLUS_CFLAGS) $(NETSNMP_CFLAGS)
+yadro_snmp_agent_LDADD = $(SDBUSPLUS_LIBS) $(SDEVENTPLUS_LIBS) $(NETSNMP_AGENT_LIBS)
 
 if HAVE_SYSTEMD
 systemdsystemunit_DATA = yadro-snmp-agent.service

@@ -20,6 +20,7 @@
  */
 #pragma once
 
-void snmpagent_init();
-void snmpagent_run();
+#include <sdeventplus/event.hpp>
+
+void snmpagent_init(const sdeventplus::Event& event);
 void snmpagent_destroy();

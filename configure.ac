@@ -18,10 +18,13 @@ AX_CXX_COMPILE_STDCXX_17([noext])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall -Werror], [CXXFLAGS])
 
 # Checks for libraries.
-PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus],,\
-    AC_MSG_ERROR(["Required sdbusplus package."]))
+PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus])
 AC_SUBST(SDBUSPLUS_CFLAGS)
 AC_SUBST(SDBUSPLUS_LIBS)
+
+PKG_CHECK_MODULES([SDEVENTPLUS], [sdeventplus])
+AC_SUBST(SDEVENTPLUS_CLFAGS)
+AC_SUBST(SDEVENTPLUS_LIBS)
 
 # Check for sdbus++
 AC_PATH_PROG([SDBUSPLUSPLUS], [sdbus++])
