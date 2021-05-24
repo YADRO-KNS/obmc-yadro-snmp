@@ -20,7 +20,10 @@
  */
 #include "config.h"
 #include "tracing.hpp"
-#include "sdevent/event.hpp"
+
+#include <sdeventplus/event.hpp>
+#include <sdeventplus/source/event.hpp>
+#include <sdeventplus/source/io.hpp>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -29,23 +32,23 @@
 #include <map>
 
 // list of snmp file descriptors attached to sd_event loop.
-static std::map<int, sdevent::source::Source> snmp_fds;
+static std::map<int, sdeventplus::source::IO> snmp_fds;
 
 /** @brief Called when snmp file descriptors have data for reading. */
-static int sdevent_snmp_read(sd_event_source* /*es*/, int fd,
-                             uint32_t /*revents*/, void* /*userdata*/)
+static void sdevent_snmp_read(sdeventplus::source::IO& /*source*/, int fd,
+                              uint32_t /*revents*/)
 {
     fd_set fdset;
     FD_ZERO(&fdset);
     FD_SET(fd, &fdset);
     snmp_read(&fdset);
-
-    return 0;
 }
 
 /** @brief Refresh list of snmp file descriptors. */
-static void sdevent_snmp_update()
+static void sdevent_snmp_update(const sdeventplus::Event& event)
 {
+    netsnmp_check_outstanding_agent_requests();
+
     int maxfd = 0;
     int is_blocked = 1;
     fd_set fdset;
@@ -59,7 +62,7 @@ static void sdevent_snmp_update()
     {
         if (it->first >= maxfd || (!FD_ISSET(it->first, &fdset)))
         {
-            it->second.enable(0);
+            it->second.set_enabled(sdeventplus::source::Enabled::Off);
             it = snmp_fds.erase(it);
         }
         else
@@ -69,21 +72,19 @@ static void sdevent_snmp_update()
         }
     }
 
-    auto& event = sdevent::event::get_default();
-
     // Invariant: FD in `fdset` are not in `snmp_fds`
     for (int fd = 0; fd < maxfd; ++fd)
     {
         if (FD_ISSET(fd, &fdset))
         {
-            snmp_fds.emplace(
-                fd, event.add_io(fd, EPOLLIN, sdevent_snmp_read, nullptr));
+            snmp_fds.emplace(fd, sdeventplus::source::IO(event, fd, EPOLLIN,
+                                                         sdevent_snmp_read));
         }
     }
 }
 
 /** @brief Initialize snmp agent */
-void snmpagent_init()
+void snmpagent_init(const sdeventplus::Event& event)
 {
     // make us a agentx client
     netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
@@ -96,13 +97,14 @@ void snmpagent_init()
 
     // We will be used to read <PACKAGE_NAME>.conf files.
     init_snmp(PACKAGE_NAME);
-}
 
-/** @brief snmpagent main loop iteration. */
-void snmpagent_run()
-{
-    netsnmp_check_outstanding_agent_requests();
-    sdevent_snmp_update();
+    // This is run before the event loop will sleep and wait for new events.
+    static sdeventplus::source::Post post(
+        event, [](sdeventplus::source::EventBase& source) {
+            sdevent_snmp_update(source.get_event());
+        });
+
+    sdevent_snmp_update(event);
 }
 
 /** @brief Deinitialize snmp agen */

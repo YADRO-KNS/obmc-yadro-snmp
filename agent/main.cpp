@@ -21,9 +21,11 @@
 
 #include "config.h"
 #include "tracing.hpp"
-#include "sdevent/event.hpp"
 #include "sdbusplus/helper.hpp"
 #include "snmp.hpp"
+
+#include <sdeventplus/event.hpp>
+#include <sdeventplus/source/signal.hpp>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -101,25 +103,11 @@ int parse_args(int argc, char** argv)
     return rc;
 }
 
-void setup_signals(sdevent::event::Event& evt)
+static void clean_exit(sdeventplus::source::Signal& source,
+                       const struct signalfd_siginfo*)
 {
-    sigset_t ss;
-    if (sigemptyset(&ss) < 0 || sigaddset(&ss, SIGTERM) < 0 ||
-        sigaddset(&ss, SIGINT) < 0)
-    {
-        TRACE_ERROR("Failed to setup signals hanlders.\n");
-        return;
-    }
-
-    /* Block SIGTERM first, so than the event loop can handle it */
-    if (sigprocmask(SIG_BLOCK, &ss, NULL) < 0)
-    {
-        TRACE_ERROR("Failed to block SIGTERM.\n");
-        return;
-    }
-
-    evt.add_signal(SIGTERM, nullptr);
-    evt.add_signal(SIGINT, nullptr);
+    TRACE_INFO("Signal %d received, terminating...\n", source.get_signal());
+    source.get_event().exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char* argv[])
@@ -127,19 +115,37 @@ int main(int argc, char* argv[])
     int rc = parse_args(argc, argv);
     if (rc < EC_SUCCESS)
     {
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     else if (rc > EC_SUCCESS)
     {
         print_usage();
-        exit(EXIT_SUCCESS);
+        return EXIT_SUCCESS;
     }
 
-    auto& evt = sdevent::event::get_default();
-    evt.attach(sdbusplus::helper::helper::getBus());
+    auto evt = sdeventplus::Event::get_default();
+    sdbusplus::helper::helper::getBus().attach_event(evt.get(),
+                                                     SD_EVENT_PRIORITY_NORMAL);
 
-    TRACE_INFO("%s is up and running.\n", PACKAGE_STRING);
-    snmpagent_init();
+    sigset_t ss;
+    if (sigemptyset(&ss) < 0 || sigaddset(&ss, SIGTERM) < 0 ||
+        sigaddset(&ss, SIGINT) < 0)
+    {
+        TRACE_ERROR("Failed to setup signal hanlders.\n");
+        return EXIT_FAILURE;
+    }
+
+    /* Block SIGTERM first, so than the event loop can handle it */
+    if (sigprocmask(SIG_BLOCK, &ss, NULL) < 0)
+    {
+        TRACE_ERROR("Failed to block SIGTERM.\n");
+        return EXIT_FAILURE;
+    }
+
+    sdeventplus::source::Signal sigterm(evt, SIGTERM, clean_exit);
+    sdeventplus::source::Signal sigint(evt, SIGINT, clean_exit);
+
+    snmpagent_init(evt);
 
     // Initialize DBus and MIB objects
 
@@ -148,14 +154,11 @@ int main(int argc, char* argv[])
     yadro::software::init();
     yadro::inventory::init();
 
-    setup_signals(evt);
-
     // main loop
-    while (rc >= 0)
-    {
-        snmpagent_run();
-        rc = evt.run(WAIT_INFINITE);
-    }
+
+    TRACE_INFO("%s is up and running.\n", PACKAGE_STRING);
+
+    rc = evt.loop();
 
     TRACE_INFO("%s shuting down.\n", PACKAGE_STRING);
 
@@ -168,5 +171,10 @@ int main(int argc, char* argv[])
 
     snmpagent_destroy();
 
-    return rc;
+    if (rc < 0)
+    {
+        TRACE_ERROR("Event loop returned error %d, %s\n", rc, strerror(-rc));
+        return -rc;
+    }
+    return EXIT_SUCCESS;
 }
