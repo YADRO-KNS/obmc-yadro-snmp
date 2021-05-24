@@ -76,9 +76,6 @@ AC_ARG_ENABLE([cfg-manager],
 AM_CONDITIONAL([WANT_AGENT], [test "x$enable_agent" != "xno"])
 AM_CONDITIONAL([WANT_CFG_MANAGER], [test "x$enable_cfg_manager" != "xno"])
 
-AC_ARG_VAR(HOST_INSTANCE, "OpenBMC host instance")
-AS_IF([test "x$HOST_INSTANCE" = "x"], [HOST_INSTANCE="0"])
-
 AC_ARG_VAR(SYSTEMD_TARGET, "Target for starting this service")
 AS_IF([test "x$SYSTEMD_TARGET" = "x"], [SYSTEMD_TARGET="multi-user.target"])
 
