@@ -21,15 +21,21 @@
 #include "config.h"
 #include "tracing.hpp"
 
+#include <sdeventplus/clock.hpp>
 #include <sdeventplus/event.hpp>
 #include <sdeventplus/source/event.hpp>
 #include <sdeventplus/source/io.hpp>
+#include <sdeventplus/source/time.hpp>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 #include <map>
+
+constexpr auto clockId = sdeventplus::ClockId::Monotonic;
+using Clock = sdeventplus::Clock<clockId>;
+using Time = sdeventplus::source::Time<clockId>;
 
 // list of snmp file descriptors attached to sd_event loop.
 static std::map<int, sdeventplus::source::IO> snmp_fds;
@@ -38,6 +44,7 @@ static std::map<int, sdeventplus::source::IO> snmp_fds;
 static void sdevent_snmp_read(sdeventplus::source::IO& /*source*/, int fd,
                               uint32_t /*revents*/)
 {
+    DEBUGMSGTL(("snmpagent::handle", "Handle fd=%d\n", fd));
     fd_set fdset;
     FD_ZERO(&fdset);
     FD_SET(fd, &fdset);
@@ -57,11 +64,28 @@ static void sdevent_snmp_update(const sdeventplus::Event& event)
     FD_ZERO(&fdset);
     snmp_select_info(&maxfd, &fdset, &timeout, &is_blocked);
 
+    static Time snmpTimer(event, {}, std::chrono::microseconds{1},
+                          [](Time&, Time::TimePoint) {
+                              DEBUGMSGTL(("snmpagent::handle", "Time out"));
+                              snmp_timeout();
+                              run_alarms();
+                          });
+
+    if (timeout.tv_sec || timeout.tv_usec)
+    {
+        snmpTimer.set_time(Clock(event).now() +
+                           std::chrono::seconds{timeout.tv_sec} +
+                           std::chrono::microseconds{timeout.tv_usec});
+        snmpTimer.set_enabled(sdeventplus::source::Enabled::OneShot);
+    }
+
     // We need to untrack any event whose FD is not in `fdset` anymore.
     for (auto it = snmp_fds.begin(); it != snmp_fds.end();)
     {
         if (it->first >= maxfd || (!FD_ISSET(it->first, &fdset)))
         {
+            DEBUGMSGTL(
+                ("snmpagent::handle", "Remove fd=%d from set.\n", it->first));
             it->second.set_enabled(sdeventplus::source::Enabled::Off);
             it = snmp_fds.erase(it);
         }
@@ -77,6 +101,7 @@ static void sdevent_snmp_update(const sdeventplus::Event& event)
     {
         if (FD_ISSET(fd, &fdset))
         {
+            DEBUGMSGTL(("snmpagent::handle", "Add fd=%d to set.\n", fd));
             snmp_fds.emplace(fd, sdeventplus::source::IO(event, fd, EPOLLIN,
                                                          sdevent_snmp_read));
         }
