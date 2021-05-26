@@ -42,11 +42,10 @@ template <typename... T> struct Item
      * in this case.
      *
      * So we can't use here:
-     *   using variant_t = sdbusplus::message::variant<T...>;
+     *   using variant_t = std::variant<T...>;
      * and we should specify all possible types.
      */
-    using variant_t = sdbusplus::message::variant<int64_t, std::string, bool,
-                                                  uint8_t, double>;
+    using variant_t = std::variant<int64_t, std::string, bool, uint8_t, double>;
 
     using values_t = std::tuple<T...>;
     using fields_map_t = std::map<std::string, variant_t>;
