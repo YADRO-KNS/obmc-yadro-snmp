@@ -109,7 +109,7 @@ struct helper
     {
         auto reqMsg = callMethod(busName, path, PROPERTIES_IFACE, "Get",
                                  interface, property);
-        sdbusplus::message::variant<Property> value;
+        std::variant<Property> value;
         reqMsg.read(value);
         return value.template get<Property>();
     }
@@ -120,7 +120,7 @@ struct helper
                                  const std::string& path,
                                  const std::string& interface)
     {
-        using Value = sdbusplus::message::variant<Types...>;
+        using Value = std::variant<Types...>;
         using Values = std::map<std::string, Value>;
 
         auto reqMsg =

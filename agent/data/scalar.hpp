@@ -32,7 +32,7 @@ namespace data
 template <typename T> class Scalar
 {
   public:
-    using value_t = sdbusplus::message::variant<T>;
+    using value_t = std::variant<T>;
 
     /* Define all of the basic class operations:
      *     Not allowed:
@@ -137,7 +137,7 @@ template <typename T> class Scalar
      */
     virtual void setValue(value_t& var)
     {
-        auto newValue = sdbusplus::message::variant_ns::get<T>(var);
+        auto newValue = std::get<T>(var);
         std::swap(_value, newValue);
     }
 
