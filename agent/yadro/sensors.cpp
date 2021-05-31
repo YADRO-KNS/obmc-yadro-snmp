@@ -313,7 +313,7 @@ struct SensorsTable : public phosphor::snmp::data::Table<Sensor>
     SensorsTable(const std::string& folder, const std::string& tableName,
                  const OID& tableOID) :
         phosphor::snmp::data::Table<Sensor>(
-            "/xyz/openbmc_project/sensors", folder,
+            "/xyz/openbmc_project/sensors/" + folder,
             {
                 "xyz.openbmc_project.Sensor.Value",
                 "xyz.openbmc_project.Sensor.Threshold.Warning",

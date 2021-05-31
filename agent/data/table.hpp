@@ -58,26 +58,20 @@ template <typename ItemType> class Table
     /**
      * @brief Object constructor
      *
-     * @param folder - DBus folder wherefrom signals about add/remove objects
-     * will be recieved.
-     * @param subfolder - Using only objects from subfolder
+     * @param folder - DBus folder where required objects exist.
      * @param interfaces - List of required DBus properties interfaces
      */
-    Table(const std::string& folder, const std::string& subfolder,
-          const interfaces_t interfaces = {}) :
-        _path(folder + (subfolder.empty() ? "" : "/" + subfolder)),
-        _interfaces(interfaces)
+    Table(const std::string& folder, const interfaces_t interfaces = {}) :
+        _path(folder), _interfaces(interfaces)
     {
-        _matches.emplace_back(
-            sdbusplus::helper::helper::getBus(),
-            sdbusplus::bus::match::rules::interfacesAdded(folder),
-            std::bind(&Table<ItemType>::onInterfacesAdded, this,
-                      std::placeholders::_1));
-        _matches.emplace_back(
-            sdbusplus::helper::helper::getBus(),
-            sdbusplus::bus::match::rules::interfacesRemoved(folder),
-            std::bind(&Table<ItemType>::onInterfacesRemoved, this,
-                      std::placeholders::_1));
+        _matches.emplace_back(sdbusplus::helper::helper::getBus(),
+                              sdbusplus::bus::match::rules::interfacesAdded(),
+                              std::bind(&Table<ItemType>::onInterfacesAdded,
+                                        this, std::placeholders::_1));
+        _matches.emplace_back(sdbusplus::helper::helper::getBus(),
+                              sdbusplus::bus::match::rules::interfacesRemoved(),
+                              std::bind(&Table<ItemType>::onInterfacesRemoved,
+                                        this, std::placeholders::_1));
     }
 
     /**
@@ -157,37 +151,36 @@ template <typename ItemType> class Table
      */
     void onInterfacesAdded(sdbusplus::message::message& m)
     {
+        using Data = std::map<std::string, typename ItemType::fields_map_t>;
+
         sdbusplus::message::object_path path;
-        std::map<std::string, typename ItemType::fields_map_t> data;
+        Data data;
         m.read(path, data);
 
         if (0 == path.str.compare(0, _path.length(), _path))
         {
             // Skip unnecessary objects
-            if (!_interfaces.empty())
+            bool isOwned = _interfaces.empty();
+            if (!isOwned)
             {
-                bool required = false;
-                for (const auto& iface : _interfaces)
-                {
-                    auto it = data.find(iface);
-                    if (it != data.end())
-                    {
-                        required = true;
-                        break;
-                    }
-                }
-
-                if (!required)
-                {
-                    return;
-                }
+                auto it = std::find_first_of(
+                    _interfaces.begin(), _interfaces.end(), data.begin(),
+                    data.end(),
+                    [](const std::string& iface,
+                       const typename Data::value_type& item) {
+                        return iface == item.first;
+                    });
+                isOwned = (it != _interfaces.end());
             }
 
-            auto& item = getItem(path.str);
-
-            for (const auto& [iface, fields] : data)
+            if (isOwned)
             {
-                item.setFields(fields);
+                auto& item = getItem(path.str);
+
+                for (const auto& [iface, fields] : data)
+                {
+                    item.setFields(fields);
+                }
             }
         }
     }
@@ -211,7 +204,23 @@ template <typename ItemType> class Table
                         e.what(), m.get_signature(), m.get_path(),
                         m.get_interface(), m.get_member(), path.str.c_str());
         }
-        dropItem(path.str);
+
+        if (0 == path.str.compare(0, _path.length(), _path))
+        {
+            bool isOwned = _interfaces.empty();
+            if (!isOwned)
+            {
+                auto it =
+                    std::find_first_of(_interfaces.begin(), _interfaces.end(),
+                                       data.begin(), data.end());
+                isOwned = (it != _interfaces.end());
+            }
+
+            if (isOwned)
+            {
+                dropItem(path.str);
+            }
+        }
     }
 
     /**
