@@ -65,7 +65,7 @@ struct State : public phosphor::snmp::data::Scalar<std::string>
         auto curr = getValue();
         if (prev != curr)
         {
-            DEBUGMSGTL(("yadro::powerstate",
+            DEBUGMSGTL(("yadro:powerstate",
                         "Host power state changed: '%s' -> '%s'\n",
                         prev.c_str(), curr.c_str()));
 

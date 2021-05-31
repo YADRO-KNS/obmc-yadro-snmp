@@ -168,7 +168,7 @@ struct Sensor
         if (prevValue != getValue<FIELD_SENSOR_VALUE>() ||
             prevState != lastState)
         {
-            DEBUGMSGTL(("yadro::sensors",
+            DEBUGMSGTL(("yadro:sensors",
                         "Sensor '%s' changed: %d -> %d, state: %d -> %d\n",
                         name.c_str(), prevValue, getValue<FIELD_SENSOR_VALUE>(),
                         prevState, lastState));
@@ -185,7 +185,7 @@ struct Sensor
      */
     void onCreate() override
     {
-        DEBUGMSGTL(("yadro::sensors", "Sensor '%s' added, state=%d\n",
+        DEBUGMSGTL(("yadro:sensors", "Sensor '%s' added, state=%d\n",
                     name.c_str(), getState()));
         send_notify(E_NORMAL);
     }
@@ -195,7 +195,7 @@ struct Sensor
      */
     void onDestroy() override
     {
-        DEBUGMSGTL(("yadro::sensors", "Sensor '%s' removed, state=%d\n",
+        DEBUGMSGTL(("yadro:sensors", "Sensor '%s' removed, state=%d\n",
                     name.c_str(), getState()));
         send_notify(E_DISABLED);
     }
