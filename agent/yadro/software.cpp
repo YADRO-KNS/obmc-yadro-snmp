@@ -187,7 +187,7 @@ constexpr oid softwareOid[] = YADRO_OID(5);
 constexpr auto SOFTWARE_FOLDER = "/xyz/openbmc_project/software";
 
 static phosphor::snmp::data::Table<Software>
-    softwareTable("/xyz/openbmc_project/software", "",
+    softwareTable("/xyz/openbmc_project/software",
                   {
                       "xyz.openbmc_project.Software.Version",
                       "xyz.openbmc_project.Software.Activation",

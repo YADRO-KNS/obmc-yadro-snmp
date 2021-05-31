@@ -210,7 +210,7 @@ struct InventoryItem : public phosphor::snmp::data::table::Item<
 static phosphor::snmp::agent::OID inventoryTableOid = YADRO_OID(4);
 
 static phosphor::snmp::data::Table<InventoryItem>
-    inventoryTable("/xyz/openbmc_project/inventory", "",
+    inventoryTable("/xyz/openbmc_project/inventory",
                    {
                        "xyz.openbmc_project.Inventory.Item",
                        "xyz.openbmc_project.Inventory.Decorator.Asset",
