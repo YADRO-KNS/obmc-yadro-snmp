@@ -52,11 +52,10 @@ template <typename T> class Scalar
     /**
      * @brief Object constructor
      */
-    Scalar(const std::string& busName, const std::string& path,
-           const std::string& iface, const std::string& prop,
-           const T& initValue) :
+    Scalar(const std::string& path, const std::string& iface,
+           const std::string& prop, const T& initValue) :
         _value(initValue),
-        _busName(busName), _path(path), _iface(iface), _prop(prop),
+        _path(path), _iface(iface), _prop(prop),
         _onChangedMatch(sdbusplus::helper::helper::getBus(),
                         sdbusplus::bus::match::rules::propertiesChanged(
                             path.c_str(), iface.c_str()),
@@ -72,8 +71,9 @@ template <typename T> class Scalar
     {
         try
         {
+            auto service = sdbusplus::helper::helper::getService(_path, _iface);
             auto r = sdbusplus::helper::helper::callMethod(
-                _busName, _path, sdbusplus::helper::PROPERTIES_IFACE, "Get",
+                service, _path, sdbusplus::helper::PROPERTIES_IFACE, "Get",
                 _iface, _prop);
 
             value_t var;
@@ -92,11 +92,6 @@ template <typename T> class Scalar
     const T& getValue() const
     {
         return _value;
-    }
-
-    const std::string& getBusName() const
-    {
-        return _busName;
     }
 
     const std::string& getPath() const
@@ -143,7 +138,6 @@ template <typename T> class Scalar
 
   private:
     T _value;
-    std::string _busName;
     std::string _path;
     std::string _iface;
     std::string _prop;
