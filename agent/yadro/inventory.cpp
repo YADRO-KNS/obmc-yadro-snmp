@@ -105,7 +105,7 @@ struct InventoryItem : public phosphor::snmp::data::table::Item<
         if (isPresent != std::get<FIELD_INVENTORY_PRESENT>(data) ||
             isFunctional != std::get<FIELD_INVENTORY_FUNCTIONAL>(data))
         {
-            DEBUGMSGTL(("yadro::inventory",
+            DEBUGMSGTL(("yadro:inventory",
                         "Inventory item '%s' at '%s': "
                         "present %d -> %d, function %d -> %d\n",
                         std::get<FIELD_INVENTORY_PRETTY_NAME>(data).c_str(),
@@ -186,12 +186,12 @@ struct InventoryItem : public phosphor::snmp::data::table::Item<
     void onCreate() override
     {
         DEBUGMSGTL(
-            ("yadro::inventory", "Inventory item '%s' added.\n", name.c_str()));
+            ("yadro:inventory", "Inventory item '%s' added.\n", name.c_str()));
     }
 
     void onDestroy() override
     {
-        DEBUGMSGTL(("yadro::Inventory", "Inventory item '%s' removed.\n",
+        DEBUGMSGTL(("yadro:inventory", "Inventory item '%s' removed.\n",
                     name.c_str()));
         if (std::get<FIELD_INVENTORY_PRESENT>(data) ||
             std::get<FIELD_INVENTORY_FUNCTIONAL>(data))

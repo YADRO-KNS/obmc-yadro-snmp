@@ -124,7 +124,7 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
         if (prevActivation != std::get<FIELD_SOFTWARE_ACTIVATION>(data) ||
             prevPriority != std::get<FIELD_SOFTWARE_PRIORITY>(data))
         {
-            DEBUGMSGTL(("yadro::software",
+            DEBUGMSGTL(("yadro:software",
                         "Software '%s' version='%s', purpose=%d changed: "
                         "activation %d -> %d, priority %d -> %d\n",
                         name.c_str(),
