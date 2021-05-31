@@ -41,32 +41,53 @@ using OID = phosphor::snmp::agent::OID;
 static const OID state_oid = YADRO_OID(1, 1);
 static const OID notify_oid = YADRO_OID(0, 1);
 
-struct State : public phosphor::snmp::data::Scalar<int32_t>
+// Values specified in the MIB file.
+constexpr int UNKNOWN = -1;
+constexpr int OFF = 0;
+constexpr int ON = 1;
+
+struct State : public phosphor::snmp::data::Scalar<std::string>
 {
-    static constexpr auto IFACE = "org.openbmc.control.Power";
-    static constexpr auto PATH = "/org/openbmc/control/power0";
+    static constexpr auto IFACE = "xyz.openbmc_project.State.Host";
+    static constexpr auto PATH = "/xyz/openbmc_project/state/host0";
 
     State() :
-        phosphor::snmp::data::Scalar<int32_t>(IFACE, PATH, IFACE, "state", -1)
+        phosphor::snmp::data::Scalar<std::string>(PATH, IFACE,
+                                                  "CurrentHostState", "")
     {
     }
 
     void setValue(value_t& var)
     {
-        int prev = getValue();
+        auto prev = getValue();
+        phosphor::snmp::data::Scalar<std::string>::setValue(var);
 
-        phosphor::snmp::data::Scalar<int32_t>::setValue(var);
-
-        if (prev != getValue())
+        auto curr = getValue();
+        if (prev != curr)
         {
             DEBUGMSGTL(("yadro::powerstate",
-                        "Host power state changed: %d -> %d\n", prev,
-                        getValue()));
+                        "Host power state changed: '%s' -> '%s'\n",
+                        prev.c_str(), curr.c_str()));
 
             phosphor::snmp::agent::Trap trap(notify_oid);
-            trap.add_field(state_oid, getValue());
+            trap.add_field(state_oid, toSNMPValue());
             trap.send();
         }
+    }
+
+    int toSNMPValue() const
+    {
+        auto value = getValue();
+        if (value == "xyz.openbmc_project.State.Host.HostState.Running")
+        {
+            return ON;
+        }
+        if (value == "xyz.openbmc_project.State.Host.HostState.Off")
+        {
+            return OFF;
+        }
+
+        return UNKNOWN;
     }
 };
 
@@ -89,7 +110,7 @@ static int State_snmp_handler(netsnmp_mib_handler* /*handler*/,
                  request = request->next)
             {
                 phosphor::snmp::agent::VariableList::set(request->requestvb,
-                                                         state.getValue());
+                                                         state.toSNMPValue());
             }
             break;
     }

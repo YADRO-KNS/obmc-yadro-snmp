@@ -78,7 +78,8 @@ struct helper
     using Interface = std::string;
     using Service = std::string;
     using Interfaces = std::vector<Interface>;
-    using Objects = std::map<Path, std::map<Service, Interfaces>>;
+    using Services = std::map<Service, Interfaces>;
+    using Objects = std::map<Path, Services>;
 
     /** @brief Get subtree from the mapper. */
     static Objects getSubTree(const std::string& path, const Interfaces& ifaces,
@@ -99,6 +100,22 @@ struct helper
         return callMethodAndRead<Interfaces>(
             OBJECT_MAPPER_IFACE, OBJECT_MAPPER_PATH, OBJECT_MAPPER_IFACE,
             "GetSubTreePaths", path, depth, ifaces);
+    }
+
+    /** @brief Get service provides specified object */
+    static Service getService(const Path& path, const Interface& iface)
+    {
+        Interfaces ifaces = {iface};
+        auto services = callMethodAndRead<Services>(
+            OBJECT_MAPPER_IFACE, OBJECT_MAPPER_PATH, OBJECT_MAPPER_IFACE,
+            "GetObject", path, ifaces);
+
+        if (!services.empty())
+        {
+            return std::move(services.begin()->first);
+        }
+
+        return {};
     }
 
     /** @brief Get a property. */
