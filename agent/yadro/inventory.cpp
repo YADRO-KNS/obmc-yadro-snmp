@@ -131,6 +131,10 @@ struct InventoryItem : public phosphor::snmp::data::table::Item<
 
         switch (tinfo->colnum)
         {
+            case COLUMN_YADROINVENTORY_PATH:
+                VariableList::set(request->requestvb, name);
+                break;
+
             case COLUMN_YADROINVENTORY_NAME:
                 VariableList::set(request->requestvb,
                                   std::get<FIELD_INVENTORY_PRETTY_NAME>(data));
@@ -228,7 +232,7 @@ void init()
     inventoryTable.update();
     inventoryTable.init_mib("yadroInventoryTable", inventoryTableOid.data(),
                             inventoryTableOid.size(),
-                            InventoryItem::COLUMN_YADROINVENTORY_NAME,
+                            InventoryItem::COLUMN_YADROINVENTORY_PATH,
                             InventoryItem::COLUMN_YADROINVENTORY_FUNCTIONAL);
 }
 

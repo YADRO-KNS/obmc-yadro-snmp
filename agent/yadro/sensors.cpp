@@ -257,6 +257,10 @@ struct Sensor
 
         switch (tinfo->colnum)
         {
+            case COLUMN_YADROSENSOR_NAME:
+                VariableList::set(request->requestvb, name);
+                break;
+
             case COLUMN_YADROSENSOR_VALUE:
                 VariableList::set(request->requestvb,
                                   getValue<FIELD_SENSOR_VALUE>());
@@ -358,7 +362,7 @@ void init()
     for (auto& s : sensors)
     {
         s.init_mib(s.tableName.c_str(), s.tableOID.data(), s.tableOID.size(),
-                   Sensor::COLUMN_YADROSENSOR_VALUE,
+                   Sensor::COLUMN_YADROSENSOR_NAME,
                    Sensor::COLUMN_YADROSENSOR_STATE);
         s.update();
     }
