@@ -156,6 +156,10 @@ struct Software : public phosphor::snmp::data::table::Item<std::string, uint8_t,
 
         switch (tinfo->colnum)
         {
+            case COLUMN_YADROSOFTWARE_HASH:
+                VariableList::set(request->requestvb, name);
+                break;
+
             case COLUMN_YADROSOFTWARE_VERSION:
                 VariableList::set(request->requestvb,
                                   std::get<FIELD_SOFTWARE_VERSION>(data));
@@ -204,7 +208,7 @@ void init()
     softwareTable.update();
     softwareTable.init_mib("yadroSoftwareTable", softwareOid,
                            OID_LENGTH(softwareOid),
-                           Software::COLUMN_YADROSOFTWARE_VERSION,
+                           Software::COLUMN_YADROSOFTWARE_HASH,
                            Software::COLUMN_YADROSOFTWARE_PRIORITY);
 }
 
