@@ -1,6 +1,6 @@
 [Unit]
 Description=Yadro SNMP Sub Agent
-Wants=snmpd.service
+PartOf=snmpd.service
 After=snmpd.service
 After=obmc-mapper.target
 
@@ -12,4 +12,4 @@ ExecStart=@bindir@/yadro-snmp-agent $OPTIONS
 SyslogIdentifier=yadro-snmp
 
 [Install]
-WantedBy=@SYSTEMD_TARGET@
+WantedBy=snmpd.service
