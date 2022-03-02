@@ -1,22 +1,13 @@
 description: >
-    This service control settings for snmpd.service
+  SNMP daemon configuration manager.
 
-methods:
-    - name: GetConfig
-      description: >
-          Get actual version of snmpd.conf.
-      returns:
-          - name: conf
-            type: string
-
-    - name: SetConfig
-      description: >
-          Setup new snmpd.conf.
-      parameters:
-          - name: conf
-            type: string
-
-    - name: ResetConfig
-      description: >
-          Restore default version of snmpd.conf
+properties:
+  - name: Community
+    type: string
+    description: >
+      SNMPv1 and SNMPv2 community that allows read-only (GET and GETNEXT) access
+      to the data providing by SNMP daemon.
+    errors:
+      - xyz.openbmc_project.Common.Error.InternalFailure
+      - xyz.openbmc_project.Common.Error.InvalidArgument
 
